@@ -55,7 +55,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/Coding/OpenGLTemplateC/build"
+			"value" : "c:/Coding/ProbeEngine/build"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -455,7 +455,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Coding/OpenGLTemplateC/build/CMakeFiles/pkgRedirects"
+			"value" : "C:/Coding/ProbeEngine/build/CMakeFiles/pkgRedirects"
 		},
 		{
 			"name" : "CMAKE_GENERATOR",
@@ -527,7 +527,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "C:/Coding/OpenGLTemplateC"
+			"value" : "C:/Coding/ProbeEngine"
 		},
 		{
 			"name" : "CMAKE_INSTALL_PREFIX",
@@ -1339,7 +1339,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Coding/OpenGLTemplateC/build"
+			"value" : "C:/Coding/ProbeEngine/build"
 		},
 		{
 			"name" : "ProbeEngine_IS_TOP_LEVEL",
@@ -1363,7 +1363,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/Coding/OpenGLTemplateC"
+			"value" : "C:/Coding/ProbeEngine"
 		}
 	],
 	"kind" : "cache",

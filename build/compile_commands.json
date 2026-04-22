@@ -1,14 +1,14 @@
 [
 {
-  "directory": "C:/Coding/OpenGLTemplateC/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe  @CMakeFiles/ENGINE.dir/includes_C.rsp -g -std=gnu11 -o CMakeFiles\\ENGINE.dir\\src\\main.c.obj -c C:\\Coding\\OpenGLTemplateC\\src\\main.c",
-  "file": "C:/Coding/OpenGLTemplateC/src/main.c",
+  "directory": "C:/Coding/ProbeEngine/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe  @CMakeFiles/ENGINE.dir/includes_C.rsp -g -std=gnu11 -o CMakeFiles\\ENGINE.dir\\src\\main.c.obj -c C:\\Coding\\ProbeEngine\\src\\main.c",
+  "file": "C:/Coding/ProbeEngine/src/main.c",
   "output": "CMakeFiles/ENGINE.dir/src/main.c.obj"
 },
 {
-  "directory": "C:/Coding/OpenGLTemplateC/build",
-  "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe  @CMakeFiles/ENGINE.dir/includes_C.rsp -g -std=gnu11 -o CMakeFiles\\ENGINE.dir\\src\\glad.c.obj -c C:\\Coding\\OpenGLTemplateC\\src\\glad.c",
-  "file": "C:/Coding/OpenGLTemplateC/src/glad.c",
+  "directory": "C:/Coding/ProbeEngine/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe  @CMakeFiles/ENGINE.dir/includes_C.rsp -g -std=gnu11 -o CMakeFiles\\ENGINE.dir\\src\\glad.c.obj -c C:\\Coding\\ProbeEngine\\src\\glad.c",
+  "file": "C:/Coding/ProbeEngine/src/glad.c",
   "output": "CMakeFiles/ENGINE.dir/src/glad.c.obj"
 }
 ]

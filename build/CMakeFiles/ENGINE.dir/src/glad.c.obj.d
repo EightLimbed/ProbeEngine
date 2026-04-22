@@ -1,7 +1,6 @@
-CMakeFiles/ENGINE.dir/src/glad.c.obj: \
- C:\Coding\OpenGLTemplateC\src\glad.c \
- C:/Coding/OpenGLTemplateC/include/glad/glad.h \
- C:/Coding/OpenGLTemplateC/include/KHR/khrplatform.h \
+CMakeFiles/ENGINE.dir/src/glad.c.obj: C:\Coding\ProbeEngine\src\glad.c \
+ C:/Coding/ProbeEngine/include/glad/glad.h \
+ C:/Coding/ProbeEngine/include/KHR/khrplatform.h \
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/15.2.0/include/stdint.h \
  C:/msys64/ucrt64/include/stdint.h C:/msys64/ucrt64/include/crtdefs.h \
  C:/msys64/ucrt64/include/corecrt.h C:/msys64/ucrt64/include/_mingw.h \

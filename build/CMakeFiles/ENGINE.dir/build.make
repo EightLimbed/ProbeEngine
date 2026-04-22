@@ -52,10 +52,10 @@ RM = "C:\Program Files\CMake\bin\cmake.exe" -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = C:\Coding\OpenGLTemplateC
+CMAKE_SOURCE_DIR = C:\Coding\ProbeEngine
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = C:\Coding\OpenGLTemplateC\build
+CMAKE_BINARY_DIR = C:\Coding\ProbeEngine\build
 
 # Include any dependencies generated for this target.
 include CMakeFiles/ENGINE.dir/depend.make
@@ -73,33 +73,33 @@ CMakeFiles/ENGINE.dir/codegen:
 
 CMakeFiles/ENGINE.dir/src/main.c.obj: CMakeFiles/ENGINE.dir/flags.make
 CMakeFiles/ENGINE.dir/src/main.c.obj: CMakeFiles/ENGINE.dir/includes_C.rsp
-CMakeFiles/ENGINE.dir/src/main.c.obj: C:/Coding/OpenGLTemplateC/src/main.c
+CMakeFiles/ENGINE.dir/src/main.c.obj: C:/Coding/ProbeEngine/src/main.c
 CMakeFiles/ENGINE.dir/src/main.c.obj: CMakeFiles/ENGINE.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Coding\OpenGLTemplateC\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/ENGINE.dir/src/main.c.obj"
-	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ENGINE.dir/src/main.c.obj -MF CMakeFiles\ENGINE.dir\src\main.c.obj.d -o CMakeFiles\ENGINE.dir\src\main.c.obj -c C:\Coding\OpenGLTemplateC\src\main.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Coding\ProbeEngine\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/ENGINE.dir/src/main.c.obj"
+	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ENGINE.dir/src/main.c.obj -MF CMakeFiles\ENGINE.dir\src\main.c.obj.d -o CMakeFiles\ENGINE.dir\src\main.c.obj -c C:\Coding\ProbeEngine\src\main.c
 
 CMakeFiles/ENGINE.dir/src/main.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/ENGINE.dir/src/main.c.i"
-	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Coding\OpenGLTemplateC\src\main.c > CMakeFiles\ENGINE.dir\src\main.c.i
+	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Coding\ProbeEngine\src\main.c > CMakeFiles\ENGINE.dir\src\main.c.i
 
 CMakeFiles/ENGINE.dir/src/main.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/ENGINE.dir/src/main.c.s"
-	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Coding\OpenGLTemplateC\src\main.c -o CMakeFiles\ENGINE.dir\src\main.c.s
+	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Coding\ProbeEngine\src\main.c -o CMakeFiles\ENGINE.dir\src\main.c.s
 
 CMakeFiles/ENGINE.dir/src/glad.c.obj: CMakeFiles/ENGINE.dir/flags.make
 CMakeFiles/ENGINE.dir/src/glad.c.obj: CMakeFiles/ENGINE.dir/includes_C.rsp
-CMakeFiles/ENGINE.dir/src/glad.c.obj: C:/Coding/OpenGLTemplateC/src/glad.c
+CMakeFiles/ENGINE.dir/src/glad.c.obj: C:/Coding/ProbeEngine/src/glad.c
 CMakeFiles/ENGINE.dir/src/glad.c.obj: CMakeFiles/ENGINE.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Coding\OpenGLTemplateC\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/ENGINE.dir/src/glad.c.obj"
-	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ENGINE.dir/src/glad.c.obj -MF CMakeFiles\ENGINE.dir\src\glad.c.obj.d -o CMakeFiles\ENGINE.dir\src\glad.c.obj -c C:\Coding\OpenGLTemplateC\src\glad.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=C:\Coding\ProbeEngine\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building C object CMakeFiles/ENGINE.dir/src/glad.c.obj"
+	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/ENGINE.dir/src/glad.c.obj -MF CMakeFiles\ENGINE.dir\src\glad.c.obj.d -o CMakeFiles\ENGINE.dir\src\glad.c.obj -c C:\Coding\ProbeEngine\src\glad.c
 
 CMakeFiles/ENGINE.dir/src/glad.c.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing C source to CMakeFiles/ENGINE.dir/src/glad.c.i"
-	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Coding\OpenGLTemplateC\src\glad.c > CMakeFiles\ENGINE.dir\src\glad.c.i
+	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Coding\ProbeEngine\src\glad.c > CMakeFiles\ENGINE.dir\src\glad.c.i
 
 CMakeFiles/ENGINE.dir/src/glad.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling C source to assembly CMakeFiles/ENGINE.dir/src/glad.c.s"
-	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Coding\OpenGLTemplateC\src\glad.c -o CMakeFiles\ENGINE.dir\src\glad.c.s
+	C:\msys64\ucrt64\bin\gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Coding\ProbeEngine\src\glad.c -o CMakeFiles\ENGINE.dir\src\glad.c.s
 
 # Object files for target ENGINE
 ENGINE_OBJECTS = \
@@ -116,7 +116,7 @@ ENGINE.exe: C:/GLFW/glfw-3.4/lib-mingw-w64/libglfw3.a
 ENGINE.exe: CMakeFiles/ENGINE.dir/linkLibs.rsp
 ENGINE.exe: CMakeFiles/ENGINE.dir/objects1.rsp
 ENGINE.exe: CMakeFiles/ENGINE.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\Coding\OpenGLTemplateC\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking C executable ENGINE.exe"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=C:\Coding\ProbeEngine\build\CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking C executable ENGINE.exe"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\ENGINE.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
@@ -128,6 +128,6 @@ CMakeFiles/ENGINE.dir/clean:
 .PHONY : CMakeFiles/ENGINE.dir/clean
 
 CMakeFiles/ENGINE.dir/depend:
-	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" C:\Coding\OpenGLTemplateC C:\Coding\OpenGLTemplateC C:\Coding\OpenGLTemplateC\build C:\Coding\OpenGLTemplateC\build C:\Coding\OpenGLTemplateC\build\CMakeFiles\ENGINE.dir\DependInfo.cmake "--color=$(COLOR)" ENGINE
+	$(CMAKE_COMMAND) -E cmake_depends "MinGW Makefiles" C:\Coding\ProbeEngine C:\Coding\ProbeEngine C:\Coding\ProbeEngine\build C:\Coding\ProbeEngine\build C:\Coding\ProbeEngine\build\CMakeFiles\ENGINE.dir\DependInfo.cmake "--color=$(COLOR)" ENGINE
 .PHONY : CMakeFiles/ENGINE.dir/depend
 

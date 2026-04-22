@@ -1,7 +1,7 @@
 {
 	"InstallScripts" : 
 	[
-		"C:/Coding/OpenGLTemplateC/build/cmake_install.cmake"
+		"C:/Coding/ProbeEngine/build/cmake_install.cmake"
 	],
 	"Parallel" : false
 }
