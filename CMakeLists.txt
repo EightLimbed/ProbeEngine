@@ -15,6 +15,8 @@ add_executable(
     src/glad.c
 )
 
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/shaders DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 target_include_directories(ENGINE PUBLIC
     include
 )
