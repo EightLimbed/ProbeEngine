@@ -4,9 +4,21 @@
 #include <GLFW/glfw3.h>
 #include <Engine/shader.h>
 
+int screenHeight = 800;
+int screenWidth = 600;
+
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow *window);
+
 int main() {
   // creates a window
   GLFWwindow *window = createWindow(800, 600, "Window");
+  // temp
+  glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+  glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
+
+  // hide mouse
+  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // creates player
   player p;
@@ -33,6 +45,7 @@ int main() {
   while (!glfwWindowShouldClose(window)) {
     // handles player inputs
     playerInputs(&p,1.0);
+    processInput(window);
 
     //glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
     //glClear(GL_COLOR_BUFFER_BIT);
@@ -51,4 +64,26 @@ int main() {
   glfwDestroyWindow(window);
   glfwTerminate();
   return 0;
+}
+
+void processInput(GLFWwindow *window) {
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+        //glfwSetCursorPos(window, 0.0,0.0);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+        glfwFocusWindow(window);
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+}
+
+// glfw: whenever the window size changed (by OS or user resize) this callback function executes
+void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+    printf("Screen resized to: (%d, %d).\n", width, height);
+    screenHeight = width;
+    screenWidth = height;
+    //updateSettings(); // updates settings based on new values.
+
+    // make sure the viewport matches the new window dimensions; note that width and height will be significantly larger than specified on retina displays.
+    glViewport(0, 0, width, height); // resize viewport
 }
