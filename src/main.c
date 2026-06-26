@@ -4,11 +4,19 @@
 #include <GLFW/glfw3.h>
 #include <Engine/shader.h>
 
+// screen
 int screenHeight = 800;
 int screenWidth = 600;
 
+// shaders
+GLuint screenTex; // screen texture
+GLuint ScreenID;
+GLuint MarcherID;
+
+// functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+void updateSettings();
 
 int main() {
   // creates a window
@@ -21,14 +29,15 @@ int main() {
   glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
   // creates player
-  player p;
+  player player;
   {vec3 pos = {0.0,0.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&p, pos, dir, 100.0, window);}
+  initializePlayer(&player, pos, dir, 100.0, 0.02, window);}
 
   // loads shaders
-  GLuint ScreenID;
-  {
+  shaderCompile(&MarcherID, GL_COMPUTE_SHADER, "shaders/4.3.raymarcher.comp");
+
+  { // screen shader
     GLuint vID;
     GLuint fID ;
     shaderCompile(&vID, GL_VERTEX_SHADER, "shaders/4.3.screenquad.vert");
@@ -41,15 +50,38 @@ int main() {
   glGenVertexArrays(1,&vao);
   glBindVertexArray(vao);
 
+  updateSettings();
+
+  // frame time
+  float deltaTime = 0.0f;
+  float lastTime = 0.0f;
+
   // render loop
   while (!glfwWindowShouldClose(window)) {
+
+    // frame time.
+    float currentTime = glfwGetTime();
+    deltaTime = currentTime - lastTime;
+    lastTime = currentTime;
+
     // handles player inputs
-    playerInputs(&p,1.0);
+    playerInputs(&player,deltaTime);
+    playerMouse(&player);
+    checkPlayer(&player);
     processInput(window);
 
     //glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
     //glClear(GL_COLOR_BUFFER_BIT);
 
+    // raymarch
+    glUseProgram(MarcherID);
+    glUniform3f(glGetUniformLocation(MarcherID, "pPos"), player.pos.x,player.pos.y,player.pos.z);
+    glUniform3f(glGetUniformLocation(MarcherID, "pDir"), player.dir.x,player.dir.y,player.dir.z);
+    glDispatchCompute(screenWidth/8,screenHeight/8,1);
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    // screen
     glUseProgram(ScreenID);
 
     // draw triangles
@@ -64,6 +96,27 @@ int main() {
   glfwDestroyWindow(window);
   glfwTerminate();
   return 0;
+}
+
+void updateSettings() {
+    // screen texture (screen color data).
+    glGenTextures(1, &screenTex);
+    glBindTexture(GL_TEXTURE_2D, screenTex);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
+    glBindImageTexture(0, screenTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    // sets raymarcher screen sizes
+    glUseProgram(MarcherID);
+    glUniform1i(glGetUniformLocation(MarcherID, "screenWidth"), screenWidth);
+    glUniform1i(glGetUniformLocation(MarcherID, "screenHeight"), screenHeight);
+
+    // sets fragment shader screen sizes
+    glUseProgram(ScreenID);
+    glUniform1i(glGetUniformLocation(ScreenID, "screenWidth"), screenWidth);
+    glUniform1i(glGetUniformLocation(ScreenID, "screenHeight"), screenHeight);
+
+    // set sampler uniform.
+    glUniform1i(glGetUniformLocation(ScreenID, "screen"), 0);
 }
 
 void processInput(GLFWwindow *window) {
@@ -82,7 +135,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     printf("Screen resized to: (%d, %d).\n", width, height);
     screenHeight = width;
     screenWidth = height;
-    //updateSettings(); // updates settings based on new values.
+    updateSettings(); // updates settings based on new values.
 
     // make sure the viewport matches the new window dimensions; note that width and height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height); // resize viewport

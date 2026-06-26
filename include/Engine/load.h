@@ -24,4 +24,3 @@ GLFWwindow *createWindow(int width, int height, char *name) {
 
   return window;
 }
-
