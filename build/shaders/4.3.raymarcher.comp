@@ -6,12 +6,19 @@ layout(std430, binding = 0) buffer VoxelData {
     float voxelData[];
 };
 
+// player data
+uniform vec3 pPos = vec3(0.0,0.0,-1.0);
+uniform vec3 pDir = vec3(0.0,0.0,1.0);
+
 // screen data
 layout(rgba32f, binding=0) uniform writeonly image2D screen;
 uniform int screenWidth = 800;
 uniform int screenHeight = 600;
 
-const uint chunkSize = 1024u;
+// constants
+const uint chunkSize = 512u;
+const int raySteps = 256;
+const float e = 2.0/float(raySteps);
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
 uint posToIndex(ivec3 p) {
@@ -47,4 +54,35 @@ float smoothDist(vec3 p) {
     float d = mix(y0, y1, f.z);
 
     return d;
+}
+
+float sdBox(vec3 p, vec3 b) {
+    vec3 d = abs(p) - b;
+    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
+// camera shizzle
+vec3 getRayDir(vec2 fragCoord, vec2 res, vec3 lookAt, float zoom) {
+    vec2 uv = (fragCoord - 0.5 * res) / res.y;
+    vec3 f = normalize(lookAt);
+    vec3 r = normalize(cross(vec3(0.0,1.0,0.0), f));
+    vec3 u = cross(f,r);
+    return normalize(f + zoom * (uv.x*r + uv.y*u));
+}
+
+void main() {
+    ivec2 fragCoord = ivec2(gl_GlobalInvocationID.xy);
+    float t = 0.0;
+    vec3 ro = pPos;
+    vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
+    for (int i = 0; i < raySteps; i++) {
+        vec3 p = ro+rd*t;
+        float d = sdBox(p, vec3(1.0));
+        if (d < e) {
+            imageStore(screen, fragCoord, vec4(1.0));
+            return;
+        }
+        t+=max(d,e);
+    }
+    imageStore(screen, fragCoord, vec4(1.0));
 }

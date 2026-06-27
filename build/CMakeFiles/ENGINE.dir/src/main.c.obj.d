@@ -14,12 +14,11 @@ CMakeFiles/ENGINE.dir/src/main.c.obj: C:\Coding\ProbeEngine\src\main.c \
  C:/Coding/ProbeEngine/include/GLFW/glfw3.h \
  C:/Coding/ProbeEngine/include/Engine/player.h \
  C:/Coding/ProbeEngine/include/Engine/types.h \
- C:/msys64/ucrt64/include/stdio.h \
+ C:/msys64/ucrt64/include/math.h C:/msys64/ucrt64/include/stdio.h \
  C:/msys64/ucrt64/include/corecrt_stdio_config.h \
  C:/msys64/ucrt64/include/_mingw_off_t.h \
  C:/msys64/ucrt64/include/swprintf.inl \
  C:/msys64/ucrt64/include/sec_api/stdio_s.h \
- C:/msys64/ucrt64/include/math.h \
  C:/Coding/ProbeEngine/include/Engine/shader.h \
  C:/msys64/ucrt64/include/string.h \
  C:/msys64/ucrt64/include/sec_api/string_s.h \

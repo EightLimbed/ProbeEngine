@@ -63,12 +63,30 @@ GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
 
     // error handling lowkey probably don't work so just don't do things wrong.
     if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        char infoLog[1024];
+        glGetProgramInfoLog(program, 1024, NULL, infoLog);
 
         printf("Shader compilation failed:\n%s\n", infoLog);
         //glDeleteShader(program);
     }
-    glUseProgram(program);
+    //glUseProgram(program);
+    return program;
+}
+
+GLuint linkComputeShader(GLuint computeShader)
+{
+    GLuint program = glCreateProgram();
+    glAttachShader(program, computeShader);
+    glLinkProgram(program);
+
+    GLint success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+
+    if (!success) {
+        char infoLog[1024];
+        glGetProgramInfoLog(program, sizeof(infoLog), NULL, infoLog);
+        printf("Compute program link failed:\n%s\n", infoLog);
+    }
+
     return program;
 }

@@ -40,8 +40,10 @@ void checkPlayer(player *p) {
 void playerInputs(player *p, float deltaTime) {
   // gets forward direction
   vec3 forward = {p->dir.x, 0.0, p->dir.z};
+  forward = normalize(forward);
+  
   vec3 up = {0.0,1.0,0.0};
-  vec3 right = cross(forward, up);
+  vec3 right = normalize(cross(forward, up));
 
   // forward
   if (glfwGetKey(p->window,GLFW_KEY_W)==GLFW_PRESS) {
@@ -57,15 +59,15 @@ void playerInputs(player *p, float deltaTime) {
   }
   // right
   if (glfwGetKey(p->window,GLFW_KEY_D)==GLFW_PRESS) {
-    p->pos.x += p->speed*deltaTime*right.x;
-    p->pos.y += p->speed*deltaTime*right.y;
-    p->pos.z += p->speed*deltaTime*right.z;
-  }
-  // left
-  if (glfwGetKey(p->window,GLFW_KEY_A)==GLFW_PRESS) {
     p->pos.x -= p->speed*deltaTime*right.x;
     p->pos.y -= p->speed*deltaTime*right.y;
     p->pos.z -= p->speed*deltaTime*right.z;
+  }
+  // left
+  if (glfwGetKey(p->window,GLFW_KEY_A)==GLFW_PRESS) {
+    p->pos.x += p->speed*deltaTime*right.x;
+    p->pos.y += p->speed*deltaTime*right.y;
+    p->pos.z += p->speed*deltaTime*right.z;
   }
   // up
   if (glfwGetKey(p->window,GLFW_KEY_SPACE)==GLFW_PRESS) {
@@ -78,6 +80,7 @@ void playerInputs(player *p, float deltaTime) {
 }
 
 void playerMouse(player *p) {
+
   // delta mouse movement
   double mousePosX;
   double mousePosY;
@@ -102,8 +105,8 @@ void playerMouse(player *p) {
   p->pitch -= mouseDeltaY;
 
   // clamp pitch to prevent flipping
-  if (p->pitch > 1.57f) p->pitch = 1.57f;
-  if (p->pitch < -1.57f) p->pitch = -1.57f;
+  if (p->pitch > 1.56f) p->pitch = 1.56f;
+  if (p->pitch < -1.56f) p->pitch = -1.56f;
 
   // trigonometry to project to vector direction
   p->dir.x = cos(p->yaw) * cos(p->pitch);

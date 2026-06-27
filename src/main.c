@@ -5,8 +5,8 @@
 #include <Engine/shader.h>
 
 // screen
-int screenHeight = 800;
-int screenWidth = 600;
+int screenWidth = 800;
+int screenHeight = 600;
 
 // shaders
 GLuint screenTex; // screen texture
@@ -32,10 +32,11 @@ int main() {
   player player;
   {vec3 pos = {0.0,0.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 100.0, 0.02, window);}
+  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
   // loads shaders
   shaderCompile(&MarcherID, GL_COMPUTE_SHADER, "shaders/4.3.raymarcher.comp");
+  MarcherID = linkComputeShader(MarcherID);
 
   { // screen shader
     GLuint vID;
@@ -44,13 +45,13 @@ int main() {
     shaderCompile(&fID, GL_FRAGMENT_SHADER , "shaders/4.3.screen.frag");
     ScreenID = linkShaders(vID, fID);
   }
+  
+  updateSettings();
 
   // bind vertex arrays (very important)
   GLuint vao;
   glGenVertexArrays(1,&vao);
   glBindVertexArray(vao);
-
-  updateSettings();
 
   // frame time
   float deltaTime = 0.0f;
@@ -67,7 +68,7 @@ int main() {
     // handles player inputs
     playerInputs(&player,deltaTime);
     playerMouse(&player);
-    checkPlayer(&player);
+    //checkPlayer(&player);
     processInput(window);
 
     //glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -77,7 +78,8 @@ int main() {
     glUseProgram(MarcherID);
     glUniform3f(glGetUniformLocation(MarcherID, "pPos"), player.pos.x,player.pos.y,player.pos.z);
     glUniform3f(glGetUniformLocation(MarcherID, "pDir"), player.dir.x,player.dir.y,player.dir.z);
-    glDispatchCompute(screenWidth/8,screenHeight/8,1);
+    
+    glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -115,13 +117,15 @@ void updateSettings() {
     glUniform1i(glGetUniformLocation(ScreenID, "screenWidth"), screenWidth);
     glUniform1i(glGetUniformLocation(ScreenID, "screenHeight"), screenHeight);
 
-    // set sampler uniform.
+    // set sampler uniform
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, screenTex);
     glUniform1i(glGetUniformLocation(ScreenID, "screen"), 0);
 }
 
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        //glfwSetCursorPos(window, 0.0,0.0);
+        //glfwSetCursorPos(window, screenWidth/2.0,screenHeight/2.0);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
