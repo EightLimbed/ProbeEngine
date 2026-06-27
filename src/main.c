@@ -137,8 +137,8 @@ void processInput(GLFWwindow *window) {
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     printf("Screen resized to: (%d, %d).\n", width, height);
-    screenHeight = width;
-    screenWidth = height;
+    screenWidth = width;
+    screenHeight = height;
     updateSettings(); // updates settings based on new values.
 
     // make sure the viewport matches the new window dimensions; note that width and height will be significantly larger than specified on retina displays.
