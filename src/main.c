@@ -12,6 +12,11 @@ int screenHeight = 600;
 GLuint screenTex; // screen texture
 GLuint ScreenID;
 GLuint MarcherID;
+GLuint TerrainID;
+
+// data
+GLuint ssbo0; // probe data
+size_t ssbo0Size = sizeof(GLfloat)*512*512*512;
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -30,11 +35,19 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {0.0,0.0,0.0};
-  vec3 dir = {0.0,0.0,1.0};
+  {vec3 pos = {128.0,128.0,0.0};
+  vec3 dir = {1.0,0.0,0.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
+  // creates SSBOs
+  // ssbo0
+  glGenBuffers(1, &ssbo0);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo0);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo0Size, NULL, GL_DYNAMIC_DRAW);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo0);
+
   // loads shaders
+  // raymarcher
   shaderCompile(&MarcherID, GL_COMPUTE_SHADER, "shaders/4.3.raymarcher.comp");
   MarcherID = linkComputeShader(MarcherID);
 
@@ -45,6 +58,10 @@ int main() {
     shaderCompile(&fID, GL_FRAGMENT_SHADER , "shaders/4.3.screen.frag");
     ScreenID = linkShaders(vID, fID);
   }
+
+  // terrain shader
+  shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
+  TerrainID = linkComputeShader(TerrainID);
   
   updateSettings();
 
@@ -52,6 +69,11 @@ int main() {
   GLuint vao;
   glGenVertexArrays(1,&vao);
   glBindVertexArray(vao);
+
+  // generate terrain
+  glUseProgram(TerrainID);
+  glDispatchCompute((512+3)/4,(512+3)/4,(512+3)/4);
+  glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
   // frame time
   float deltaTime = 0.0f;
