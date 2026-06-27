@@ -2,8 +2,8 @@
 
 layout(local_size_x = 8, local_size_y = 8) in; // 64 local threads is apparently sweet spot
 
-layout(std430, binding = 0) buffer VoxelData {
-    float voxelData[];
+layout(std430, binding = 0) buffer ProbeData {
+    float probeData[];
 };
 
 // player data
@@ -29,14 +29,14 @@ uint posToIndex(ivec3 p) {
 float smoothDist(vec3 p) {
     ivec3 ip = ivec3(floor(p));
     vec3 f = fract(p);
-    float d000 = voxelData[posToIndex(ip + ivec3(0,0,0))];
-    float d100 = voxelData[posToIndex(ip + ivec3(1,0,0))];
-    float d010 = voxelData[posToIndex(ip + ivec3(0,1,0))];
-    float d110 = voxelData[posToIndex(ip + ivec3(1,1,0))];
-    float d001 = voxelData[posToIndex(ip + ivec3(0,0,1))];
-    float d101 = voxelData[posToIndex(ip + ivec3(1,0,1))];
-    float d011 = voxelData[posToIndex(ip + ivec3(0,1,1))];
-    float d111 = voxelData[posToIndex(ip + ivec3(1,1,1))];
+    float d000 = probeData[posToIndex(ip + ivec3(0,0,0))];
+    float d100 = probeData[posToIndex(ip + ivec3(1,0,0))];
+    float d010 = probeData[posToIndex(ip + ivec3(0,1,0))];
+    float d110 = probeData[posToIndex(ip + ivec3(1,1,0))];
+    float d001 = probeData[posToIndex(ip + ivec3(0,0,1))];
+    float d101 = probeData[posToIndex(ip + ivec3(1,0,1))];
+    float d011 = probeData[posToIndex(ip + ivec3(0,1,1))];
+    float d111 = probeData[posToIndex(ip + ivec3(1,1,1))];
 
     // need to interpolate every direction together, unlike last time.
     // x interpolation
