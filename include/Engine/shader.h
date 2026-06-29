@@ -1,14 +1,16 @@
 #include "glad/glad.h"
+#include <stddef.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define MAX_INCLUDES 10
 
-void insertString(const char *orig, const char *to_insert, int pos, char *result) {
+void insertString(const char *orig, const char *to_insert, int pos, char* result) {
     // copy original string up to insertion point
     strncpy(result, orig, pos);
     result[pos] = '\0'; //null terminate;
-    
+
     // add new substring
     strcat(result, to_insert);
     
@@ -16,10 +18,10 @@ void insertString(const char *orig, const char *to_insert, int pos, char *result
     strcat(result, orig + pos);
 }
 
-char* getShaderContent(const char* fileName) {
+char* readFile(const char* fileName) {
     FILE *fp;
     long size = 0;
-    char* shaderContent;
+    char* fileContent;
 
     // file size or something idrk
     fp = fopen(fileName, "rb");
@@ -32,16 +34,22 @@ char* getShaderContent(const char* fileName) {
 
     // reads file content
     fp = fopen(fileName, "r");
-    shaderContent = (char*)malloc(size);
-    memset(shaderContent, '\0', size);
-    fread(shaderContent, 1, size - 1, fp);
+    fileContent = (char*)malloc(size);
+    memset(fileContent, '\0', size);
+    fread(fileContent, 1, size - 1, fp);
     fclose(fp);
+    return fileContent;
+}
+
+char* getShaderContent(const char* fileName) {
+    char* shaderContent = readFile(fileName);
+    //printf("%s",shaderContent);
 
     // finds header files, and replaces //include line with said code
     
     // finds includes, and stores their locations
     char* target = "//include "; // length of 10
-    int indexArray[10]; // 10 max header files
+    int indexArray[MAX_INCLUDES]; // 10 max header files
     int indexes = 0;
     // str[i] condition implicitly checks if str[i] != '\0'
     // would use strstr() but want multiple indexes, and strtok would give word instead of character index, hence manually.
@@ -50,22 +58,58 @@ char* getShaderContent(const char* fileName) {
         if (strncmp(target, window, 10)==0) {
             indexArray[indexes]=i;
             indexes++;
+            // error handling
+            if (indexes > MAX_INCLUDES) {
+                printf("Too many includes.");
+                return shaderContent;
+            }
         }
     }
     // early out
     if (indexes == 0) return shaderContent;
 
+    int insertArray[MAX_INCLUDES];
+    char* headerContents[MAX_INCLUDES] = {}; // max of 10 includes again
     // iterates over includes and loads their file paths before adding it to string
     for (int i = 0; i < indexes; i++) {
         char* start = shaderContent+indexArray[i]+10; // gets start of filepath
         char* end = strstr(start, "\n"); // gets end of filepath
+        int len = end-start+1;
+        // adds end insert part after new line
+        insertArray[i]=end-shaderContent+1;
 
         // gets file path window string
-        char window[end-start];
-        strncpy(window, start, end-start);
-        printf("%s\n", window);
+        char window[len]; // +1 for null terminator
+        snprintf(window, sizeof(window), "%s", start); // strncpy was not working
+        //printf("%s:\n",window);
+
+        // gets file
+        headerContents[i] = readFile(window);
+        //printf("%s\n", headerContents[i]);
     }
-    return shaderContent;
+
+    // SHOULD CHECK FOR DUPLICATE HEADER FILES
+
+    //creates resultant content by inserting
+    size_t headerSize = 0;
+    for (int i; i< indexes; i++) headerSize+=strlen(headerContents[i]);
+    
+    // creates space for combined content
+    char* resultContent = malloc(strlen(shaderContent)+headerSize+1);
+    char* resultContentOld = malloc(strlen(shaderContent)+headerSize+1); // flip flop so memory doesnt break
+    //printf("%lld", headerSize);
+    snprintf(resultContent, strlen(shaderContent)+1, "%s", shaderContent);
+    //printf("%s",resultContent);
+
+    // adds content below
+
+    for (int i = 0; i < indexes; i++) {
+        //printf("%s",headerContents[i]);
+        insertString(resultContent, headerContents[i], insertArray[i], resultContentOld);
+        snprintf(resultContent, strlen(resultContentOld)+1, "%s", resultContentOld);
+    }
+    //printf("%s",resultContent);
+    return resultContent;
     
 }
 
@@ -73,7 +117,8 @@ void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePa
 {
     GLint isCompiled = 0;
     // loads shader content
-    const char* shaderSource = getShaderContent(shaderFilePath); 
+    char* shaderSource = getShaderContent(shaderFilePath); 
+    printf("%s",shaderSource);
 
     // creates shader
     *shaderId = glCreateShader(shaderType);
@@ -85,6 +130,8 @@ void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePa
     glShaderSource(*shaderId, 1, (const char**)&shaderSource, NULL);
     glCompileShader(*shaderId);
     glGetShaderiv(*shaderId, GL_COMPILE_STATUS, &isCompiled);
+
+    free(shaderSource); // free memory allocated in previous function.
 
     // error handling
     if(isCompiled == GL_FALSE) { // give better messages eventually
