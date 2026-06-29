@@ -4,6 +4,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+void insertString(const char *orig, const char *to_insert, int pos, char *result) {
+    // copy original string up to insertion point
+    strncpy(result, orig, pos);
+    result[pos] = '\0'; //null terminate;
+    
+    // add new substring
+    strcat(result, to_insert);
+    
+    // add remainder of initial string
+    strcat(result, orig + pos);
+}
+
 char* getShaderContent(const char* fileName) {
     FILE *fp;
     long size = 0;
@@ -24,7 +36,37 @@ char* getShaderContent(const char* fileName) {
     memset(shaderContent, '\0', size);
     fread(shaderContent, 1, size - 1, fp);
     fclose(fp);
+
+    // finds header files, and replaces //include line with said code
+    
+    // finds includes, and stores their locations
+    char* target = "//include "; // length of 10
+    int indexArray[10]; // 10 max header files
+    int indexes = 0;
+    // str[i] condition implicitly checks if str[i] != '\0'
+    // would use strstr() but want multiple indexes, and strtok would give word instead of character index, hence manually.
+    for (int i = 0; shaderContent[i]; i++) {
+        char* window = shaderContent+i;
+        if (strncmp(target, window, 10)==0) {
+            indexArray[indexes]=i;
+            indexes++;
+        }
+    }
+    // early out
+    if (indexes == 0) return shaderContent;
+
+    // iterates over includes and loads their file paths before adding it to string
+    for (int i = 0; i < indexes; i++) {
+        char* start = shaderContent+indexArray[i]+10; // gets start of filepath
+        char* end = strstr(start, "\n"); // gets end of filepath
+
+        // gets file path window string
+        char window[end-start];
+        strncpy(window, start, end-start);
+        printf("%s\n", window);
+    }
     return shaderContent;
+    
 }
 
 void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePath)

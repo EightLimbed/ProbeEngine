@@ -18,7 +18,7 @@ uniform int screenHeight = 1;
 // constants
 const uint chunkSize = 512u;
 const int raySteps = 32;
-const float e = 0.02;
+const float e = 0.002;
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
 uint posToIndex(ivec3 p) {
@@ -76,11 +76,11 @@ void main() {
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
     float steps = 0.0;
     for (int i = 0; i < raySteps; i++) {
-        vec3 p = ro+rd*t;
+        vec3 p = mod(ro+rd*t, float(chunkSize));
         steps += 1.0;
         //float d = sdBox(p, vec3(4.0));
         float d = smoothDist(p);
-        if (d < e) {
+        if (d <= e) {
             float falloff = 1.2/sqrt(t);
             imageStore(screen, fragCoord, vec4(1.0)*falloff);
             return;

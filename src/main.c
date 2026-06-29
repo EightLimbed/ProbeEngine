@@ -24,6 +24,9 @@ void processInput(GLFWwindow *window);
 void updateSettings();
 
 int main() {
+  shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
+
+    return 0;
   // creates a window
   GLFWwindow *window = createWindow(800, 600, "Window");
   // temp
