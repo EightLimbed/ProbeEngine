@@ -5,13 +5,11 @@ layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local thr
 layout(std430, binding = 0) buffer ProbeData {
     float probeData[];
 };
-const uint chunkSize = 512u;
+//const uint chunkSize = 512u;
 
+//include shaders/4.3.constantsH.comp
 
-//include shaders/4.3.test.head
-//include shaders/4.3.test.head
 //include shaders/4.3.noiseH.comp
-//include shaders/4.3.test.head
 
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.

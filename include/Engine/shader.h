@@ -42,7 +42,6 @@ char* readFile(const char* fileName) {
     return fileContent;
 }
 
-
 // saves a file.
 void saveFile(char *data, char *path){
     FILE* fptr;
@@ -128,7 +127,16 @@ char* getShaderContent(const char* fileName) {
         sizeSum+=sizeArray[i];
     }
     //printf("%s",resultContent);
-    saveFile(resultContent, "src/noise.comp");
+    // debugging, saves full shaders
+    // char around[] = "src/.comp";
+    // char name[9];
+    // char* path;
+    // snprintf(name, 9, "%d", shaderCount);
+    // insertString(around, name, 4, path);
+    // saveFile(resultContent, path);
+    // shaderCount++;
+    // printf("%s",path);
+
     return resultContent;  
 }
 
@@ -151,6 +159,7 @@ void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePa
     glCompileShader(*shaderId);
     glGetShaderiv(*shaderId, GL_COMPILE_STATUS, &isCompiled);
 
+    //shaderSource=NULL;
     //free(shaderSource); // free memory allocated in previous function.
 
     // error handling
@@ -168,15 +177,14 @@ GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
     glLinkProgram(program);
 
     GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    glGetShaderiv(program, GL_LINK_STATUS, &success);
 
     // error handling lowkey probably don't work so just don't do things wrong.
     if (!success) {
         char infoLog[1024];
-        glGetProgramInfoLog(program, 1024, NULL, infoLog);
+        glGetShaderInfoLog(program, 1024, NULL, infoLog);
 
         printf("Shader compilation failed:\n%s\n", infoLog);
-        //glDeleteShader(program);
     }
     //glUseProgram(program);
     return program;
@@ -196,6 +204,6 @@ GLuint linkComputeShader(GLuint computeShader)
         glGetProgramInfoLog(program, sizeof(infoLog), NULL, infoLog);
         printf("Compute program link failed:\n%s\n", infoLog);
     }
-
+    //glUseProgram(program);
     return program;
 }

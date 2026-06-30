@@ -1,0 +1,5 @@
+// common constants
+const uint chunkSize = 512u;
+const int raySteps = 32;
+const float renderDist = 1024.0;
+const float e = 0.01;
