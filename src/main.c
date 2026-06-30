@@ -24,6 +24,8 @@ void processInput(GLFWwindow *window);
 void updateSettings();
 
 int main() {
+  //shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
+  //return 0;
   // creates a window
   GLFWwindow *window = createWindow(800, 600, "Window");
   // temp
@@ -147,7 +149,7 @@ void updateSettings() {
 
 void processInput(GLFWwindow *window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-        //glfwSetCursorPos(window, screenWidth/2.0,screenHeight/2.0);
+        glfwSetCursorPos(window, 0,0);
         glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {

@@ -41,6 +41,18 @@ char* readFile(const char* fileName) {
     return fileContent;
 }
 
+
+// saves a file.
+void saveFile(char *data, char *path){
+    FILE* fptr;
+
+    // opens file for binary writing
+    fptr = fopen(path, "wb");
+    fwrite(data, strlen(data), 1, fptr);
+    fclose(fptr);
+    return;
+}
+
 char* getShaderContent(const char* fileName) {
     char* shaderContent = readFile(fileName);
     //printf("%s",shaderContent);
@@ -69,6 +81,7 @@ char* getShaderContent(const char* fileName) {
     if (indexes == 0) return shaderContent;
 
     int insertArray[MAX_INCLUDES];
+    int sizeArray[MAX_INCLUDES] = {0};
     char* headerContents[MAX_INCLUDES] = {}; // max of 10 includes again
     // iterates over includes and loads their file paths before adding it to string
     for (int i = 0; i < indexes; i++) {
@@ -85,6 +98,8 @@ char* getShaderContent(const char* fileName) {
 
         // gets file
         headerContents[i] = readFile(window);
+        // saves size of file to offset next index. Offset because first goes in first place
+        sizeArray[i] = strlen(headerContents[i]);
         //printf("%s\n", headerContents[i]);
     }
 
@@ -102,23 +117,27 @@ char* getShaderContent(const char* fileName) {
     //printf("%s",resultContent);
 
     // adds content below
-
+    int sizeSum = 0; // offset based on sizes of old inserts
     for (int i = 0; i < indexes; i++) {
         //printf("%s",headerContents[i]);
-        insertString(resultContent, headerContents[i], insertArray[i], resultContentOld);
+        insertString(resultContent, headerContents[i], insertArray[i]+sizeSum, resultContentOld);
         snprintf(resultContent, strlen(resultContentOld)+1, "%s", resultContentOld);
+
+        // increment size sum
+        sizeSum+=sizeArray[i];
     }
     //printf("%s",resultContent);
-    return resultContent;
-    
+    saveFile(resultContent, "src/noise.comp");
+    return resultContent;  
 }
+
 
 void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePath)
 {
     GLint isCompiled = 0;
     // loads shader content
     char* shaderSource = getShaderContent(shaderFilePath); 
-    printf("%s",shaderSource);
+    //printf("%s",shaderSource);
 
     // creates shader
     *shaderId = glCreateShader(shaderType);
@@ -131,7 +150,7 @@ void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePa
     glCompileShader(*shaderId);
     glGetShaderiv(*shaderId, GL_COMPILE_STATUS, &isCompiled);
 
-    free(shaderSource); // free memory allocated in previous function.
+    //free(shaderSource); // free memory allocated in previous function.
 
     // error handling
     if(isCompiled == GL_FALSE) { // give better messages eventually

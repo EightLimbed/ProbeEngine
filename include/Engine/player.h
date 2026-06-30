@@ -80,7 +80,6 @@ void playerInputs(player *p, float deltaTime) {
 }
 
 void playerMouse(player *p) {
-
   // delta mouse movement
   double mousePosX;
   double mousePosY;
