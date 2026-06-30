@@ -18,7 +18,8 @@ uniform int screenHeight = 1;
 // constants
 const uint chunkSize = 512u;
 const int raySteps = 32;
-const float e = 0.002;
+const float renderDist = 1024.0;
+const float e = 0.01;
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
 uint posToIndex(ivec3 p) {
@@ -54,11 +55,6 @@ float smoothDist(vec3 p) {
     return d;
 }
 
-float sdBox(vec3 p, vec3 b) {
-    vec3 d = abs(p) - b;
-    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
-}
-
 // camera shizzle
 vec3 getRayDir(vec2 fragCoord, vec2 res, vec3 lookAt, float zoom) {
     vec2 uv = (fragCoord - 0.5 * res) / res.y;
@@ -80,12 +76,13 @@ void main() {
         steps += 1.0;
         //float d = sdBox(p, vec3(4.0));
         float d = smoothDist(p);
-        if (d <= e) {
+        if (d < e) {
             float falloff = 1.2/sqrt(t);
             imageStore(screen, fragCoord, vec4(1.0)*falloff);
             return;
         }
-        t+=max(d,e);
+        if (t>renderDist) break;
+        t+=max(d,e*10.0);
     }
     imageStore(screen, fragCoord, vec4(0.0));
 }

@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #define MAX_INCLUDES 10
 
 void insertString(const char *orig, const char *to_insert, int pos, char* result) {
