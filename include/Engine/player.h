@@ -95,6 +95,8 @@ void playerMouse(player *p) {
   } else {
       mouseDeltaX = 0.0;
       mouseDeltaY = 0.0;
+      p->omx = 0.0;
+      p->omy = 0.0;
   }
 
   // update pitch and yaw

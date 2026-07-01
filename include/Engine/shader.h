@@ -87,6 +87,7 @@ char* getShaderContent(const char* fileName) {
     for (int i = 0; i < indexes; i++) {
         char* start = shaderContent+indexArray[i]+10; // gets start of filepath
         char* end = strstr(start, "\n"); // gets end of filepath
+        if (!end) end = shaderContent + strlen(shaderContent); // if no newline before end of file. 
         int len = end-start+1;
         // adds end insert part after new line
         insertArray[i]=end-shaderContent+1;
@@ -107,7 +108,7 @@ char* getShaderContent(const char* fileName) {
 
     //creates resultant content by inserting
     size_t headerSize = 0;
-    for (int i; i< indexes; i++) headerSize+=strlen(headerContents[i]);
+    for (int i=0; i< indexes; i++) headerSize+=strlen(headerContents[i]);
     
     // creates space for combined content
     char* resultContent = malloc(strlen(shaderContent)+headerSize+1);
@@ -136,6 +137,10 @@ char* getShaderContent(const char* fileName) {
     // saveFile(resultContent, path);
     // shaderCount++;
     // printf("%s",path);
+    // free memory
+    for (int i = 0; i < indexes; i++) free(headerContents[i]);
+    free(shaderContent);
+    free(resultContentOld);
 
     return resultContent;  
 }
@@ -160,7 +165,7 @@ void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePa
     glGetShaderiv(*shaderId, GL_COMPILE_STATUS, &isCompiled);
 
     //shaderSource=NULL;
-    //free(shaderSource); // free memory allocated in previous function.
+    free(shaderSource); // free memory allocated in previous function.
 
     // error handling
     if(isCompiled == GL_FALSE) { // give better messages eventually

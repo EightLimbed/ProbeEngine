@@ -15,12 +15,7 @@ layout(rgba32f, binding=0) uniform writeonly image2D screen;
 uniform int screenWidth = 1;
 uniform int screenHeight = 1;
 
-// include shaders/4.3.constantsH.comp
-// common constants
-const uint chunkSize = 512u;
-const int raySteps = 32;
-const float renderDist = 1024.0;
-const float e = 0.01;
+//include shaders/4.3.constantsH.comp
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
 uint posToIndex(ivec3 p) {
