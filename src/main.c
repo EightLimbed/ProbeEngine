@@ -5,8 +5,8 @@
 #include <Engine/shader.h>
 
 // screen
-int screenWidth = 800;
-int screenHeight = 600;
+int screenWidth = 1600;
+int screenHeight = 1200;
 
 // shaders
 GLuint screenTex; // screen texture
@@ -27,7 +27,7 @@ int main() {
   //shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
   //return 0;
   // creates a window
-  GLFWwindow *window = createWindow(800, 600, "Window");
+  GLFWwindow *window = createWindow(screenWidth, screenHeight, "I don't know");
   // temp
   glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
   glfwSetInputMode(window, GLFW_STICKY_KEYS, 1);
