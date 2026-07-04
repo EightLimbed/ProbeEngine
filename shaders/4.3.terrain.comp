@@ -1,9 +1,11 @@
 #version 430 core
 
+// NOTE: TO BETTER UTILIZE BITPACKING, THIS DOES 4 VALUES AT ONCE. THIS MEANS TWO DISPATCH AXIS ARE HALF SIZED
+
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
 
 layout(std430, binding = 0) buffer ProbeData {
-    float probeData[];
+    uint probeData[];
 };
 //const uint chunkSize = 512u;
 
@@ -22,20 +24,52 @@ float sdBox(vec3 p, vec3 b) {
     return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
 }
 
-float height(vec3 p) {
-    float height = ((noise2D(vec2(p.x,p.z)/512.0) + 1.0) * 64.0 + (noise2D(vec2(p.z,p.x)/256.0) + 1.0) * 12.0 + + (noise2D(vec2(p.z,p.x)/24.0) + 1.0) * 6.0);
-    return p.y-height;
+float terrain(vec3 p) {
+    float d = 100000000000.0;
+    for (int x = 0; x <8; x++)
+    for (int y = 0; y <8; y++) {
+        d = min(d, sdBox(vec3(p-vec3(x*4.0,0.0,y*4.0)),vec3(1.0,16.0,1.0)));
+    }
+    d = sdBox(vec3(p),vec3(1.0,16.0,1.0));
+    return d;
 }
 
-float terrain(vec3 p) {
-    return min(
-        height(p),
-        sdBox(vec3(p-64.0),vec3(12.0,128.0,12.0))
-    );
+int material(vec3 p) {
+    return int(posToIndex(uvec3(p))); // color gradient kinda
+}
+
+
+// creates 1*2*2 block at given position
+uint packed4Probes(vec3 p) {
+    
+    vec4 data;
+    vec3 offsets[4] = {vec3(0.0,0.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,0.0,1.0),vec3(0.0,1.0,1.0)};
+    for (int i = 0; i<4; i++) {
+        vec3 pu = p+offsets[i];
+        float d = terrain(pu);
+        
+        if (d < 0.0) data[i] = -intBitsToFloat(material(pu)); // negative to indicate solid
+        else data[i] = d;
+    }
+
+    return packSnorm4x8(data);
 }
 
 void main() {
-    uvec3 p = gl_GlobalInvocationID;
-    float d = terrain(p);
-    probeData[posToIndex(p)]=d;
+    // invocation position
+    vec3 po = vec3(gl_GlobalInvocationID);
+    
+    // adjusted position for doing 4 at once.
+    vec3 p = po;
+    p.y*=2.0;
+    p.z*=2.0;
+    // gets packed data
+    uint data = packed4Probes(p);
+
+    // sets data
+    uint index = posToIndex(uvec3(p));
+    uint subIndex = index % 4u; // gets subindex within uint
+    uint domIndex = (index-subIndex)/4u; // gets uint index
+    probeData[domIndex] = data; // sets value at index
+
 }

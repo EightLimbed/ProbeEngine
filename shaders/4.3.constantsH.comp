@@ -1,5 +1,6 @@
 // common constants
-const uint chunkSize = 512u;
-const int raySteps = 128;
-const float renderDist = 1024.0;
-const float e = 0.01;
+const uint chunkSize = 32u; // chunk size
+const int raySteps = 128; // maximum ray steps
+const float renderDist = 32.0; // render distance (early out)
+const float e = 0.01; // epsilon
+const float cFactor = float(chunkSize)/127.0; // minimum distance with 1 bit packing at chunk size
