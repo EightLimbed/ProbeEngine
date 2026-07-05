@@ -15,8 +15,9 @@ GLuint MarcherID;
 GLuint TerrainID;
 
 // data
+const int chunkSize = 512;
 GLuint ssbo0; // probe data
-size_t ssbo0Size = sizeof(GLfloat)*512*512*512;
+size_t ssbo0Size = sizeof(GLfloat)*chunkSize*chunkSize*chunkSize;
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -74,7 +75,7 @@ int main() {
 
   // generate terrain
   glUseProgram(TerrainID);
-  glDispatchCompute((512+3)/4,(512+3)/4,(512+3)/4);
+  glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
   glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
   // frame time

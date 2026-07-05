@@ -71,7 +71,7 @@ void main() {
         //float d = sdBox(p, vec3(4.0));
         float d = smoothDist(p);
         if (d < e) {
-            float falloff = t/1000.0;
+            float falloff = t/renderDist;
             imageStore(screen, fragCoord, mix(vec4(0.1,1.0,0.2,1.0),vec4(0.0,0.4,1.0,1.0),falloff));
             return;
         }
