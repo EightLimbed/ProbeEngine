@@ -3,7 +3,6 @@
 #include <Engine/player.h>
 #include <GLFW/glfw3.h>
 #include <Engine/shader.h>
-#include <winscard.h>
 
 // screen
 int screenWidth = 1600;
@@ -16,9 +15,8 @@ GLuint MarcherID;
 GLuint TerrainID;
 
 // data
-#define CHUNK_SIZE 32
 GLuint ssbo0; // probe data
-size_t ssbo0Size = sizeof(byte)*CHUNK_SIZE*CHUNK_SIZE*CHUNK_SIZE;
+size_t ssbo0Size = sizeof(GLfloat)*512*512*512;
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -26,6 +24,8 @@ void processInput(GLFWwindow *window);
 void updateSettings();
 
 int main() {
+  //shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
+  //return 0;
   // creates a window
   GLFWwindow *window = createWindow(screenWidth, screenHeight, "I don't know");
   // temp
@@ -37,9 +37,9 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {0.0,18.0,0.0};
+  {vec3 pos = {128.0,128.0,0.0};
   vec3 dir = {1.0,0.0,0.0};
-  initializePlayer(&player, pos, dir, 10.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
   // creates SSBOs
   // ssbo0
@@ -74,8 +74,7 @@ int main() {
 
   // generate terrain
   glUseProgram(TerrainID);
-  // two axis half size because 4 done at once.
-  glDispatchCompute((CHUNK_SIZE+3)/(4),(CHUNK_SIZE+3)/(8),(CHUNK_SIZE+3)/(8));
+  glDispatchCompute((512+3)/4,(512+3)/4,(512+3)/4);
   glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
   // frame time

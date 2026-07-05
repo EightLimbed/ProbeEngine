@@ -3,13 +3,11 @@
 layout(local_size_x = 8, local_size_y = 8) in; // 64 local threads is apparently sweet spot
 
 layout(std430, binding = 0) buffer ProbeData {
-    uint probeData[];
+    float probeData[];
 };
 
-const vec3 colors[10] = {vec3(0.1,0.7,0.1), vec3(0.1,0.8,0.0), vec3(1.0,0.3,0.5), vec3(1.0,0.5,0.1), vec3(0.6,0.3,0.0), vec3(0.5,0.5,0.5), vec3(0.5,0.5,0.1), vec3(0.2,0.8,1.0), vec3(1.0), vec3(0.4,0.6,1.0)};
-
 // player data
-uniform vec3 pPos = vec3(0.0,0.0,0.0);
+uniform vec3 pPos = vec3(0.0,0.0,-1.0);
 uniform vec3 pDir = vec3(0.0,0.0,1.0);
 
 // screen data
@@ -24,47 +22,18 @@ uint posToIndex(ivec3 p) {
     return p.x+chunkSize*(p.y+chunkSize*p.z);
 }
 
-// returns a color ID or a distance based on sign
-void unpackProbe(uint index, out uint m, out float d) {
-    // unpacks value, should think of way to utilize both
-    // maybe with morton we get neighboring at once or something
-    uint subIndex = index % 4u; // gets subindex within uint
-    uint domIndex = (index-subIndex)/4u; // gets uint index
-    uint probe = probeData[domIndex]; // gets value 
-
-    float value = unpackSnorm4x8(probe)[subIndex];
-
-    if (value > 0.0) { // set distance
-        m = 0u; 
-        d = value;
-    } else { // set material id
-        m = uint(abs(floatBitsToInt(value)));
-        d = 0.0;
-    }
-}
-
 // interpolates between surrounding precomputed probe distances.
-void smoothDist(vec3 p, float d, uint m) {
+float smoothDist(vec3 p) {
     ivec3 ip = ivec3(floor(p));
     vec3 f = fract(p);
-    //vec3 offsetsA[4] = {vec3(0.0,0.0,0.0),vec3(0.0,1.0,0.0),vec3(0.0,0.0,1.0),vec3(0.0,1.0,1.0)};
-    //vec3 offsetsB[4] = {vec3(1.0,0.0,0.0),vec3(1.0,1.0,0.0),vec3(1.0,0.0,1.0),vec3(1.0,1.0,1.0)};
-    float d000;
-    unpackProbe(posToIndex(ip + ivec3(0,0,0)), m, d000);
-    float d100;
-    unpackProbe(posToIndex(ip + ivec3(1,0,0)), m, d000);
-    float d010;
-    unpackProbe(posToIndex(ip + ivec3(0,1,0)), m, d000);
-    float d110;
-    unpackProbe(posToIndex(ip + ivec3(1,1,0)), m, d000);
-    float d001;
-    unpackProbe(posToIndex(ip + ivec3(0,0,1)), m, d000);
-    float d101;
-    unpackProbe(posToIndex(ip + ivec3(1,0,1)), m, d000);
-    float d011;
-    unpackProbe(posToIndex(ip + ivec3(0,1,1)), m, d000);
-    float d111;
-    unpackProbe(posToIndex(ip + ivec3(1,1,1)), m, d000);
+    float d000 = probeData[posToIndex(ip + ivec3(0,0,0))];
+    float d100 = probeData[posToIndex(ip + ivec3(1,0,0))];
+    float d010 = probeData[posToIndex(ip + ivec3(0,1,0))];
+    float d110 = probeData[posToIndex(ip + ivec3(1,1,0))];
+    float d001 = probeData[posToIndex(ip + ivec3(0,0,1))];
+    float d101 = probeData[posToIndex(ip + ivec3(1,0,1))];
+    float d011 = probeData[posToIndex(ip + ivec3(0,1,1))];
+    float d111 = probeData[posToIndex(ip + ivec3(1,1,1))];
 
     // x interpolation
     float x00 = mix(d000, d100, f.x);
@@ -77,9 +46,9 @@ void smoothDist(vec3 p, float d, uint m) {
     float y1 = mix(x01, x11, f.y);
 
     // z interpolation
-    d = mix(y0, y1, f.z);
+    float d = mix(y0, y1, f.z);
 
-    //return d;
+    return d;
 }
 
 // camera shizzle
@@ -98,11 +67,9 @@ void main() {
     vec3 ro = pPos;
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
     for (int i = 0; i < raySteps; i++) {
-        vec3 p = ro+rd*t;
+        vec3 p = mod(ro+rd*t, float(chunkSize));
         //float d = sdBox(p, vec3(4.0));
-        float d; 
-        uint m;
-        smoothDist(p, d, m);
+        float d = smoothDist(p);
         if (d < e) {
             float falloff = t/1000.0;
             imageStore(screen, fragCoord, mix(vec4(0.1,1.0,0.2,1.0),vec4(0.0,0.4,1.0,1.0),falloff));

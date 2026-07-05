@@ -93,6 +93,8 @@ void playerMouse(player *p) {
       p->omx = mousePosX;
       p->omy = mousePosY;
   } else {
+      mouseDeltaX = 0.0; // fix horizontal thing maybe
+      mouseDeltaY = 0.0;
       p->omx = 0.0;
       p->omy = 0.0;
   }

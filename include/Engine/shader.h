@@ -55,8 +55,9 @@ void saveFile(char *data, char *path){
 
 char* getShaderContent(const char* fileName) {
     char* shaderContent = readFile(fileName);
+    //printf("%s",shaderContent);
 
-    // finds header files, and on //include line adds said code
+    // finds header files, and replaces //include line with said code
     
     // finds includes, and stores their locations
     char* target = "//include "; // length of 10
@@ -126,7 +127,16 @@ char* getShaderContent(const char* fileName) {
         // increment size sum
         sizeSum+=sizeArray[i];
     }
-
+    //printf("%s",resultContent);
+    // debugging, saves full shaders
+    // char around[] = "src/.comp";
+    // char name[9];
+    // char* path;
+    // snprintf(name, 9, "%d", shaderCount);
+    // insertString(around, name, 4, path);
+    // saveFile(resultContent, path);
+    // shaderCount++;
+    // printf("%s",path);
     // free memory
     for (int i = 0; i < indexes; i++) free(headerContents[i]);
     free(shaderContent);
@@ -154,49 +164,39 @@ void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePa
     glCompileShader(*shaderId);
     glGetShaderiv(*shaderId, GL_COMPILE_STATUS, &isCompiled);
 
+    //shaderSource=NULL;
     free(shaderSource); // free memory allocated in previous function.
 
     // error handling
-    if(isCompiled == GL_FALSE) {
-
-        char infoLog[1024];
-        glGetShaderInfoLog(*shaderId, sizeof(infoLog), NULL, infoLog);
-
-        printf("Shader Compiler Error: %s\n%s\n", shaderFilePath, infoLog);
+    if(isCompiled == GL_FALSE) { // give better messages eventually
+        printf("Shader Compiler Error: %s\n", shaderFilePath);
         glDeleteShader(*shaderId);
-        *shaderId = 0;   // important
         return;
     }
 }
 
 GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
-    if (vertexShader == 0 || fragmentShader == 0) {
-        printf("Not linking because shader compilation failed.\n");
-        return 0;
-    }
     GLuint program = glCreateProgram();
     glAttachShader(program, vertexShader);
     glAttachShader(program, fragmentShader);
     glLinkProgram(program);
 
     GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    glGetShaderiv(program, GL_LINK_STATUS, &success);
 
+    // error handling lowkey probably don't work so just don't do things wrong.
     if (!success) {
         char infoLog[1024];
-        glGetProgramInfoLog(program, sizeof(infoLog), NULL, infoLog);
-        printf("Shader program link failed:\n%s\n", infoLog);
-    }
+        glGetShaderInfoLog(program, 1024, NULL, infoLog);
 
+        printf("Shader compilation failed:\n%s\n", infoLog);
+    }
+    //glUseProgram(program);
     return program;
 }
 
-GLuint linkComputeShader(GLuint computeShader) {
-    if (computeShader == 0) {
-        printf("Not linking because shader compilation failed.\n");
-        return 0;
-    }
-
+GLuint linkComputeShader(GLuint computeShader)
+{
     GLuint program = glCreateProgram();
     glAttachShader(program, computeShader);
     glLinkProgram(program);
