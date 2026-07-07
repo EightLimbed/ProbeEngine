@@ -1,0 +1,32 @@
+// correct way to repeat space every s units
+float repeated(vec3 p, float s) {
+    vec3 id = round(p/s);
+    vec3 o = sign(p-s*id); // neighbor offset direction
+    
+    float d = 1e20;
+    for(int k = 0; k < 2; k++)
+    for(int j = 0; j < 2; j++)
+    for(int i = 0; i < 2; i++) {
+        vec3 rid = id + vec3(i,j,k)*o;
+        vec3 r = p - s*rid;
+        d = min(d, sphere(r,rid));
+    }
+    return d;
+}
+
+// correct way to repeat space every s units
+float repeated2D(vec3 p3, float s, float l) {
+    vec2 p = p3.xz;
+    vec2 id = round(p/s);
+    vec2  o = sign(p-s*id); // neighbor offset direction
+    
+    float d = 1e20;
+    for( int j=0; j<2; j++ )
+    for( int i=0; i<2; i++ )
+    {
+        vec2 rid = id + vec2(i,j)*o;
+        vec2 r = p - s*rid;
+        d = min(d,sphere(vec3(r.x,p3.y,r.y), vec3(rid.x, 0.0, rid.y), l));
+    }
+    return d;
+}

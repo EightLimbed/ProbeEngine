@@ -25,42 +25,45 @@ float smax(float a, float b, float k) {
     return max(a, b) + h*h*0.25/k;
 }
 
-float sphere(vec3 p, vec3 id, float r) {
-    float rr = hash(id)*r;
-    return length(p)-rr;
+float sphere(vec3 p, vec3 id, float l) {
+    float r = hash(id)*l;
+    return length(p)-r;
 }
 
 // correct way to repeat space every s units
-float repeated2D(vec3 p3, float s, float l) {
-    vec2 p = p3.xz;
-    vec2 id = round(p/s);
-    vec2  o = sign(p-s*id); // neighbor offset direction
+float repeated(vec3 p, float s, float l) {
+    vec3 id = round(p/s);
+    vec3 o = sign(p-s*id); // neighbor offset direction
     
     float d = 1e20;
-    for( int j=0; j<2; j++ )
-    for( int i=0; i<2; i++ )
-    {
-        vec2 rid = id + vec2(i,j)*o;
-        vec2 r = p - s*rid;
-        d = min(d,sphere(vec3(r.x,p3.y,r.y), vec3(rid.x, 0.0, rid.y), l));
+    for(int k = 0; k < 2; k++)
+    for(int j = 0; j < 2; j++)
+    for(int i = 0; i < 2; i++) {
+        vec3 rid = id + vec3(i,j,k)*o;
+        vec3 r = p - s*rid;
+        d = min(d, sphere(r,rid,l));
     }
     return d;
 }
 
 float terrain(vec3 p, float s, float l) {
-    float d = 1e20;
+    float d = p.y;
     float ol = l;
-    for (int i = 0; i < 8; i++) {
-        d = smin(d, repeated2D(p, s, l),0.3*s);
-        p.y -= ol-s;
+    for (int i = 0; i < 4; i++) {
+        float n = repeated(p, s, l);
+        n = smax(n,d-0.01*s,0.3*s);
+        d = smin(n,d,0.3*s);
+        p = mat3(0.00, 1.60, 1.20,
+                -1.60, 0.72,-0.96,
+                -1.20,-0.96, 1.28)*p;
         s*=0.5;
-        l*=0.5;
+        l*=0.6;
     }
     return d;
 }
 
 void main() {
     uvec3 p = gl_GlobalInvocationID;
-    float d = terrain(p, 80.0, 80.0);
+    float d = terrain(p/2.0, 320.0, 160.0);
     probeData[posToIndex(p)]=d;
 }
