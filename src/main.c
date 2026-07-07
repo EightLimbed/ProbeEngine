@@ -38,7 +38,7 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {128.0,128.0,0.0};
+  {vec3 pos = {(float)chunkSize/2.0,(float)chunkSize/2.0,(float)chunkSize/2.0};
   vec3 dir = {1.0,0.0,0.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
@@ -92,6 +92,9 @@ int main() {
 
     // handles player inputs
     playerInputs(&player,deltaTime);
+    {vec3 A = {0.0,0.0,0.0};
+    vec3 B = {(float)chunkSize,(float)chunkSize,(float)chunkSize};
+    clampPlayer(&player, A, B);}
     playerMouse(&player);
     //checkPlayer(&player);
     processInput(window);

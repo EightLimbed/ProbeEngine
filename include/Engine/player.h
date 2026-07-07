@@ -37,6 +37,16 @@ void checkPlayer(player *p) {
   printf("Player rotation: (%.3f, %.3f, %.3f).\n", p->dir.x, p->dir.y, p->dir.z);
 }
 
+// clamps player position within given bounds
+void clampPlayer(player *p, vec3 A, vec3 B) {
+  if (B.x<p->pos.x) p->pos.x = B.x; // max X
+  if (B.y<p->pos.y) p->pos.y = B.y; // max Y
+  if (B.z<p->pos.z) p->pos.z = B.z; // max Z
+  if (A.x>p->pos.x) p->pos.x = A.x; // min X
+  if (A.y>p->pos.y) p->pos.y = A.y; // min Y
+  if (A.z>p->pos.z) p->pos.z = A.z; // min Z
+}
+
 void playerInputs(player *p, float deltaTime) {
   // gets forward direction
   vec3 forward = {p->dir.x, 0.0, p->dir.z};

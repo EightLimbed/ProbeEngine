@@ -67,7 +67,7 @@ void main() {
     vec3 ro = pPos;
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
     for (int i = 0; i < raySteps; i++) {
-        vec3 p = mod(ro+rd*t, float(chunkSize));
+        vec3 p = ro+rd*t;
         //float d = sdBox(p, vec3(4.0));
         float d = smoothDist(p);
         if (d < e) {
@@ -75,6 +75,7 @@ void main() {
             imageStore(screen, fragCoord, mix(vec4(0.1,1.0,0.2,1.0),vec4(0.0,0.4,1.0,1.0),falloff));
             return;
         }
+        if (clamp(p, vec3(0.0), vec3(chunkSize)) != p) break;
         if (t>renderDist) break;
         t+=max(d,e*10.0);
     }
