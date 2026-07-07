@@ -39,7 +39,7 @@ int main() {
   // creates player
   player player;
   {vec3 pos = {(float)chunkSize/2.0,(float)chunkSize/2.0,(float)chunkSize/2.0};
-  vec3 dir = {1.0,0.0,0.0};
+  vec3 dir = {0.0,0.0,1.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
   // creates SSBOs
