@@ -25,8 +25,7 @@ float smax(float a, float b, float k) {
     return max(a, b) + h*h*0.25/k;
 }
 
-float sphere(vec3 p, vec3 id, float l) {
-    float r = hash(id)*l;
+float sphere(vec3 p, float r) {
     return length(p)-r;
 }
 
@@ -41,29 +40,29 @@ float repeated(vec3 p, float s, float l) {
     for(int i = 0; i < 2; i++) {
         vec3 rid = id + vec3(i,j,k)*o;
         vec3 r = p - s*rid;
-        d = min(d, sphere(r,rid,l));
+        float rad = hash(rid)*l;
+        d = min(d, sphere(r,rad));
     }
     return d;
 }
 
-float terrain(vec3 p, float s, float l) {
-    float d = p.y;
-    float ol = l;
-    for (int i = 0; i < 4; i++) {
+
+// takes position, layer amplitude, spacing, and radius/length of constructor shapes
+float terrain(vec3 p, float a, float s, float l) {
+    float d = p.y; // base/first layer
+    for (int i = 0; i < 11; i++) { // noise octaves
         float n = repeated(p, s, l);
-        n = smax(n,d-0.01*s,0.3*s);
-        d = smin(n,d,0.3*s);
-        p = mat3(0.00, 1.60, 1.20,
-                -1.60, 0.72,-0.96,
-                -1.20,-0.96, 1.28)*p;
-        s*=0.5;
-        l*=0.6;
+        n = smax(n,d-a*s,0.3*s); // smoothly maximize octave a bit above current layer
+        d = smin(n,d,0.3*s); // smoothly minimize current latyer with octave
+        p *= mat3(0.956,0,0.292,0,1,0,-0.292,0,0.956); // rotate next layer 17 degrees
+        s *= 0.5; // reduce spacing and radius of next layer.
+        l *= 0.5;
     }
     return d;
 }
 
 void main() {
     uvec3 p = gl_GlobalInvocationID;
-    float d = terrain(p/2.0, 320.0, 160.0);
-    probeData[posToIndex(p)]=d;
+    float d = terrain(p+vec3(0.0,0.0,0.0), 0.05, 2560.0, 1280.0);
+    probeData[posToIndex(p)]=max(d,dMin);
 }

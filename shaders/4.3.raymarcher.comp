@@ -49,7 +49,7 @@ float smoothDist(vec3 p) {
 
 // Paulo Falcao technique
 vec3 getNormal(vec3 p) {
-    const float h = e; // replace by an appropriate value
+    const float h = e*10.0; // replace by an appropriate value
     const vec2 k = vec2(1,-1);
     return normalize(k.xyy*smoothDist(p + k.xyy*h) + 
                      k.yyx*smoothDist(p + k.yyx*h) + 

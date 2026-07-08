@@ -30,6 +30,8 @@ void initializePlayer(player *p, vec3 pos, vec3 dir, float speed, float sensitiv
   p->speed = speed;
   p->window = window;
   p->sensitivity = sensitivity;
+  p->pitch = asin(p->dir.y);
+  p->yaw = atan2(p->dir.x, p->dir.z);
 }
 
 void checkPlayer(player *p) {
@@ -116,8 +118,8 @@ void playerMouse(player *p) {
   p->pitch -= mouseDeltaY;
 
   // clamp pitch to prevent flipping
-  if (p->pitch > 1.56f) p->pitch = 1.56f;
-  if (p->pitch < -1.56f) p->pitch = -1.56f;
+  if (p->pitch > 1.55f) p->pitch = 1.55f;
+  if (p->pitch < -1.55f) p->pitch = -1.55f;
 
   // trigonometry to project to vector direction
   p->dir.x = cos(p->yaw) * cos(p->pitch);
