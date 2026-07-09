@@ -30,7 +30,7 @@ void initializePlayer(player *p, vec3 pos, vec3 dir, float speed, float sensitiv
   p->speed = speed;
   p->window = window;
   p->sensitivity = sensitivity;
-  p->pitch = asin(p->dir.y);
+  p->pitch = asin(-p->dir.y);
   p->yaw = atan2(p->dir.x, p->dir.z);
 }
 

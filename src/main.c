@@ -17,7 +17,7 @@ GLuint TerrainID;
 // data
 const int chunkSize = 512;
 GLuint ssbo0; // probe data
-size_t ssbo0Size = sizeof(GLfloat)*chunkSize*chunkSize*chunkSize;
+size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
