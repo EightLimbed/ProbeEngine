@@ -1,6 +1,6 @@
 // common constants
-const uint chunkSize = 512u;
-const int raySteps = 256;
-const float renderDist = 512.0;
+const uint chunkSize = 1024u;
+const int raySteps = 160;
+const float renderDist = 1024.0;
 const float e = 0.01;
 const float dMin = -sqrt(2.0); // important to allow negative sdf distance data encoding.

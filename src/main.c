@@ -15,7 +15,7 @@ GLuint MarcherID;
 GLuint TerrainID;
 
 // data
-const int chunkSize = 512;
+const int chunkSize = 1024;
 GLuint ssbo0; // probe data
 size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking
 
