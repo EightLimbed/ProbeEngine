@@ -14,32 +14,51 @@ uniform vec3 pDir = vec3(0.0,0.0,1.0);
 layout(rgba32f, binding=0) uniform writeonly image2D screen;
 uniform int screenWidth = 1;
 uniform int screenHeight = 1;
+uniform float iTime;
 
 //include shaders/4.3.constantsH.comp
 //include shaders/4.3.functionsH.comp
+//include shaders/4.3.materialsH.comp
 
-float getProbe(ivec3 p) {
+float getProbe(uvec3 p) {
     uint m = posToIndex(p);
     uint uintIndex = m >> 2u;
     uint subIndex = m & 3u;
 
     vec4 values = unpackSnorm4x8(probeData[uintIndex]);
 
-    return values[subIndex]*float(chunkSize);
+    return (values[subIndex]*float(chunkSize))+dMin; // can add distance values based on materials
+}
+
+vec4 getColor(vec3 p) {
+    uvec3 up = uvec3(p);
+    float count = 1.0;
+    vec4 color = vec4(1.0);
+    for (int x = -3; x < 2; x++)
+    for (int y = -3; y < 2; y++)
+    for (int z = -3; z < 2; z++) {
+        float fmaterial = getProbe(up+ivec3(x,y,z))*128.0;
+        if (fmaterial > 0.0) break;
+        uint umaterial = uint(abs(fmaterial));
+        color += colors[umaterial%6u];
+        count += 1.0;
+    }
+    return color/count;
+
 }
 
 // interpolates between surrounding precomputed probe distances.
 float smoothDist(vec3 p) {
-    ivec3 ip = ivec3(floor(p));
+    uvec3 up = uvec3(floor(p));
     vec3 f = fract(p);
-    float d000 = getProbe(ip + ivec3(0,0,0));
-    float d100 = getProbe(ip + ivec3(1,0,0));
-    float d010 = getProbe(ip + ivec3(0,1,0));
-    float d110 = getProbe(ip + ivec3(1,1,0));
-    float d001 = getProbe(ip + ivec3(0,0,1));
-    float d101 = getProbe(ip + ivec3(1,0,1));
-    float d011 = getProbe(ip + ivec3(0,1,1));
-    float d111 = getProbe(ip + ivec3(1,1,1));
+    float d000 = getProbe(up + uvec3(0,0,0));
+    float d100 = getProbe(up + uvec3(1,0,0));
+    float d010 = getProbe(up + uvec3(0,1,0));
+    float d110 = getProbe(up + uvec3(1,1,0));
+    float d001 = getProbe(up + uvec3(0,0,1));
+    float d101 = getProbe(up + uvec3(1,0,1));
+    float d011 = getProbe(up + uvec3(0,1,1));
+    float d111 = getProbe(up + uvec3(1,1,1));
 
     // x interpolation
     float x00 = mix(d000, d100, f.x);
@@ -54,7 +73,7 @@ float smoothDist(vec3 p) {
     // z interpolation
     float d = mix(y0, y1, f.z);
 
-    return d;
+    return d; // adjust for negative distances
 }
 
 // Paulo Falcao technique
@@ -78,9 +97,12 @@ vec3 getRayDir(vec2 fragCoord, vec2 res, vec3 lookAt, float zoom) {
 
 void main() {
     ivec2 fragCoord = ivec2(gl_GlobalInvocationID.xy);
-    //imageStore(screen, fragCoord, vec4(getProbe(ivec3(10))));
-    //return;
 
+    // crosshair
+    vec2 crossHair = fragCoord-vec2(screenWidth,screenHeight)/2.0;
+    if (dot(crossHair,crossHair) < 128.0) return;
+
+    // marching
     float t = 0.0;
     vec3 ro = pPos;
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
@@ -91,7 +113,8 @@ void main() {
         if (d < e) {
             float falloff = t/renderDist;
             float shadow = 1.1-dot(vec3(1.0),getNormal(p)); // basic phong lighting
-            imageStore(screen, fragCoord, mix(vec4(0.1,1.0,0.2,1.0)*shadow,vec4(0.0,0.4,1.0,1.0),falloff));
+            vec4 color = getColor(p);
+            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),falloff));
             return;
         }
         if (clamp(p, vec3(0.0), vec3(chunkSize)) != p) break;

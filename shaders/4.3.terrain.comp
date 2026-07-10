@@ -6,7 +6,6 @@ layout(std430, binding = 0) buffer ProbeData {
     uint probeData[];
 };
 
-#extension GL_ARB_shading_language_packing : require
 //const uint chunkSize = 512u;
 
 //include shaders/4.3.constantsH.comp
@@ -48,10 +47,10 @@ float repeated(vec3 p, float s, float l) {
     return d;
 }
 
-// takes position, layer amplitude, spacing, and radius/length of constructor shapes
-float terrain(vec3 p, float a, float s, float l) {
+// takes position, layer amplitude, layer amount, spacing, and radius/length of constructor shapes
+float terrain(vec3 p, float a, uint layers, float s, float l) {
     float d = p.y; // base/first layer
-    for (int i = 0; i < 11; i++) { // noise octaves
+    for (int i = 0; i < layers; i++) { // noise octaves
         float n = repeated(p, s, l);
         n = smax(n,d-a*s,0.3*s); // smoothly maximize octave a bit above current layer
         d = smin(n,d,0.3*s); // smoothly minimize current latyer with octave
@@ -62,14 +61,20 @@ float terrain(vec3 p, float a, float s, float l) {
     return d;
 }
 
+uint material(vec3 p) {
+    return uint(p.y);
+}
+
 // sets probe with 8 bit packing
-void setProbe(uvec3 p, float d) {
+void setProbe(uvec3 p, float d, uint mat) {
     uint m = posToIndex(p);
     uint uintIndex = m >> 2u;
     uint subIndex = m & 3u;
 
     vec4 probes = vec4(0.0);
-    probes[subIndex] = d / float(chunkSize);
+
+    if (d>dMin) probes[subIndex] = (d-dMin) / float(chunkSize); // set distance, normalized to 0-1
+    else probes[subIndex] = float(mat)/128.0; // if solid, set material
 
     uint packedProbe = packSnorm4x8(probes);
 
@@ -78,6 +83,8 @@ void setProbe(uvec3 p, float d) {
 
 void main() {
     uvec3 p = gl_GlobalInvocationID;
-    float d = terrain(p+vec3(0.0,0.0,0.0), 0.05, 2560.0, 1280.0);
-    setProbe(p,max(d,dMin));
+    //float d = terrain(p+vec3(0.0,192.0,0.0), 0.05, 11, 2560.0, 1280.0);
+    float d = terrain(p, 0.05, 8, 160.0, 80.0);
+    uint mat = material(p);
+    setProbe(p,d,mat);
 }

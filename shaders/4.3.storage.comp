@@ -46,7 +46,7 @@ void setProbe(uvec3 p, float d) {
 }
 
 // gets probe with 16 bit packing
-float getProbe(ivec3 p) {
+float getProbe(uvec3 p) {
     uint m = posToIndex(p);
     uint uintIndex = m >> 2u;
     uint subIndex = m & 1u;

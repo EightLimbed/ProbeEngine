@@ -15,9 +15,9 @@ GLuint MarcherID;
 GLuint TerrainID;
 
 // data
-const int chunkSize = 1024;
+const int chunkSize = 32;
 GLuint ssbo0; // probe data
-size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking
+size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/2; // /4 for bitpacking
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -40,7 +40,7 @@ int main() {
   player player;
   {vec3 pos = {(float)chunkSize/2.0,(float)chunkSize/2.0,(float)chunkSize/2.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 20.0, 0.005, window);}
 
   // creates SSBOs
   // ssbo0
@@ -106,6 +106,8 @@ int main() {
     glUseProgram(MarcherID);
     glUniform3f(glGetUniformLocation(MarcherID, "pPos"), player.pos.x,player.pos.y,player.pos.z);
     glUniform3f(glGetUniformLocation(MarcherID, "pDir"), player.dir.x,player.dir.y,player.dir.z);
+    glUniform1f(glGetUniformLocation(MarcherID, "iTime"), currentTime);
+
     
     glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
 
