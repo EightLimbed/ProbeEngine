@@ -30,28 +30,3 @@ float repeated2D(vec3 p3, float s, float l) {
     }
     return d;
 }
-
-// sets probe with 16 bit packing
-void setProbe(uvec3 p, float d) {
-    uint m = posToIndex(p);
-    uint uintIndex = m >> 2u;
-    uint subIndex = m & 1u;
-
-    vec2 probes = vec2(0.0);
-    probes[subIndex] = d / float(chunkSize);
-
-    uint packedProbe = packSnorm2x16(probes);
-
-    atomicOr(probeData[uintIndex], packedProbe); // set value. need clear mask if overwriting
-}
-
-// gets probe with 16 bit packing
-float getProbe(uvec3 p) {
-    uint m = posToIndex(p);
-    uint uintIndex = m >> 2u;
-    uint subIndex = m & 1u;
-
-    vec2 values = unpackSnorm2x16(probeData[uintIndex]);
-
-    return values[subIndex]*float(chunkSize);
-}

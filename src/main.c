@@ -15,9 +15,11 @@ GLuint MarcherID;
 GLuint TerrainID;
 
 // data
-const int chunkSize = 32;
+const int chunkSize = 64;
 GLuint ssbo0; // probe data
-size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/2; // /4 for bitpacking
+size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking, 8 bit floats
+GLuint ssbo1; // material data
+size_t ssbo1Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -48,6 +50,12 @@ int main() {
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo0);
   glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo0Size, NULL, GL_DYNAMIC_DRAW);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo0);
+
+  // ssbo1
+  glGenBuffers(1, &ssbo1);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo1);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo1Size, NULL, GL_DYNAMIC_DRAW);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo1);
 
   // loads shaders
   // raymarcher
@@ -89,11 +97,12 @@ int main() {
     float currentTime = glfwGetTime();
     deltaTime = currentTime - lastTime;
     lastTime = currentTime;
+    //printf("FPS: %f\n",1.0/deltaTime);
 
     // handles player inputs
     playerInputs(&player,deltaTime);
     {vec3 A = {0.0,0.0,0.0};
-    vec3 B = {(float)chunkSize,(float)chunkSize,(float)chunkSize};
+    vec3 B = {(float)chunkSize-1.0,(float)chunkSize-1.0,(float)chunkSize-1.0};
     clampPlayer(&player, A, B);}
     playerMouse(&player);
     //checkPlayer(&player);
