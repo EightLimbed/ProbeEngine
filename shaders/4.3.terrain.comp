@@ -98,7 +98,7 @@ void setMaterial(uvec3 p, uint m) {
 void main() {
     uvec3 p = gl_GlobalInvocationID;
     //float d = terrain(p+vec3(0.0,192.0,0.0), 0.05, 11, 2560.0, 1280.0);
-    float d = terrain(p, 0.05, 10, 160.0, 80.0);
+    float d = terrain(p, 0.05, 9, 256.0, 96.0);
     uint mat = material(p);
     setMaterial(p,mat);
     setProbe(p,d);

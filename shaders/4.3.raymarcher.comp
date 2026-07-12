@@ -40,7 +40,7 @@ float getProbe(uvec3 p) {
     vec4 values = unpackUnorm4x8(probeData[uintIndex]);
 
     float warp = 0.0;
-    if (getMaterial(p) > 4) warp = sin(iTime+p.x)/3.0; // terrain specific typing uses only one call (no color blend)
+    //if (getMaterial(p) > 4) warp = sin(iTime+p.x)/3.0; // terrain specific typing uses only one call (no color blend)
 
     return ((values[subIndex]*float(chunkSize))+dMin)+warp;
 }
@@ -73,6 +73,36 @@ float smoothDist(vec3 p) {
     float d = mix(y0, y1, f.z);
 
     return d; // adjust for negative distances
+}
+
+vec4 smoothColor(vec3 p) {
+    uvec3 up = uvec3(floor(p));
+    vec3 f = fract(p);
+    f = f*f;
+    
+    vec4 c000 = colors[getMaterial(up + uvec3(0,0,0))];
+    vec4 c100 = colors[getMaterial(up + uvec3(1,0,0))];
+    vec4 c010 = colors[getMaterial(up + uvec3(0,1,0))];
+    vec4 c110 = colors[getMaterial(up + uvec3(1,1,0))];
+    vec4 c001 = colors[getMaterial(up + uvec3(0,0,1))];
+    vec4 c101 = colors[getMaterial(up + uvec3(1,0,1))];
+    vec4 c011 = colors[getMaterial(up + uvec3(0,1,1))];
+    vec4 c111 = colors[getMaterial(up + uvec3(1,1,1))];
+
+    // x interpolation
+    vec4 x00 = mix(c000, c100, f.x);
+    vec4 x10 = mix(c010, c110, f.x);
+    vec4 x01 = mix(c001, c101, f.x);
+    vec4 x11 = mix(c011, c111, f.x);
+
+    // y interpolation
+    vec4 y0 = mix(x00, x10, f.y);
+    vec4 y1 = mix(x01, x11, f.y);
+
+    // z interpolation
+    vec4 c = mix(y0, y1, f.z);
+
+    return c; // adjust for negative distances
 }
 
 // Paulo Falcao technique
@@ -114,7 +144,7 @@ void main() {
         if (d < e) {
             float falloff = t/renderDist;
             float shadow = max(1.0-dot(getNormal(p),vec3(1.0)),0.3); // basic shading
-            vec4 color = colors[getMaterial(ivec3(round(p)))];
+            vec4 color = smoothColor(p);
 
             imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),falloff));
             return;
