@@ -10,8 +10,6 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-//const uint chunkSize = 512u;
-
 //include shaders/4.3.constantsH.comp
 //include shaders/4.3.functionsH.comp
 
@@ -87,10 +85,10 @@ void setProbe(uvec3 p, float d) {
 // sets material with 4 bit packing
 void setMaterial(uvec3 p, uint m) {
     uint index = posToIndex(p);
-    uint uintIndex = index >> 4u;
-    uint bitShift = (index & 7u) * 8u; // bit shift
+    uint uintIndex = index >> 3u;
+    uint bitShift = (index & 7u) * 4u; // bit shift
 
-    uint insert = (m & 0xFFu) << bitShift;
+    uint insert = (m & 0xFu) << bitShift;
 
     atomicOr(materialData[uintIndex], insert); // set value. need clear mask if overwriting
 }

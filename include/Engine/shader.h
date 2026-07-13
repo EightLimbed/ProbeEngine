@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <Engine/types.h>
 
 #define MAX_INCLUDES 10
 
@@ -43,7 +44,7 @@ char* readFile(const char* fileName) {
 }
 
 // saves a file.
-void saveFile(char *data, char *path){
+void saveFile(char *data, char *path) {
     FILE* fptr;
 
     // opens file for binary writing
@@ -136,8 +137,7 @@ char* getShaderContent(const char* fileName) {
 }
 
 
-void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePath)
-{
+void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePath) {
     GLint isCompiled = 0;
     // loads shader content
     char* shaderSource = getShaderContent(shaderFilePath); 
@@ -211,4 +211,24 @@ GLuint linkComputeShader(GLuint computeShader) {
     }
     //glUseProgram(program);
     return program;
+}
+
+void shaderSetFloat(GLuint ID, const char* name, float value) {
+    glUseProgram(ID);
+    glUniform1f(glGetUniformLocation(ID, name), value);
+}
+
+void shaderSetUint(GLuint ID, const char* name, unsigned int value) {
+    glUseProgram(ID);
+    glUniform1ui(glGetUniformLocation(ID, name), value);
+}
+
+void shaderSetInt(GLuint ID, const char* name, int value) {
+    glUseProgram(ID);
+    glUniform1i(glGetUniformLocation(ID, name), value);
+}
+
+void shaderSetVec3(GLuint ID, const char* name, vec3 value) {
+    glUseProgram(ID);
+    glUniform3f(glGetUniformLocation(ID, name), value.x, value.y, value.z);
 }

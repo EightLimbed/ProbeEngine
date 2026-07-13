@@ -5,13 +5,14 @@
 #include <Engine/shader.h>
 
 // screen
-int screenWidth = 1600;
-int screenHeight = 1200;
+int screenWidth = 800;
+int screenHeight = 600;
 
 // shaders
 GLuint screenTex; // screen texture
 GLuint ScreenID;
 GLuint MarcherID;
+GLuint UpdatesID;
 GLuint TerrainID;
 
 // data
@@ -70,6 +71,10 @@ int main() {
     ScreenID = linkShaders(vID, fID);
   }
 
+  // block update shader
+  shaderCompile(&UpdatesID, GL_COMPUTE_SHADER, "shaders/4.3.updates.comp");
+  UpdatesID = linkComputeShader(UpdatesID);
+
   // terrain shader
   shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
   TerrainID = linkComputeShader(TerrainID);
@@ -101,26 +106,31 @@ int main() {
 
     // handles player inputs
     playerInputs(&player,deltaTime);
-    {vec3 A = {0.0,0.0,0.0};
-    vec3 B = {(float)chunkSize-1.0,(float)chunkSize-1.0,(float)chunkSize-1.0};
-    clampPlayer(&player, A, B);}
     playerMouse(&player);
-    //checkPlayer(&player);
+
+    // clamps player within one chunk.
+    {vec3 A = {0.0,0.0,0.0}; vec3 B = {(float)chunkSize-1.0,(float)chunkSize-1.0,(float)chunkSize-1.0};
+    clampPlayer(&player, A, B);}
+
+    // process other input
     processInput(window);
 
     //glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
     //glClear(GL_COLOR_BUFFER_BIT);
 
     // raymarch
-    glUseProgram(MarcherID);
-    glUniform3f(glGetUniformLocation(MarcherID, "pPos"), player.pos.x,player.pos.y,player.pos.z);
-    glUniform3f(glGetUniformLocation(MarcherID, "pDir"), player.dir.x,player.dir.y,player.dir.z);
-    glUniform1f(glGetUniformLocation(MarcherID, "iTime"), currentTime);
-
+    shaderSetVec3(MarcherID, "pPos", player.pos); // sets player stuff
+    shaderSetVec3(MarcherID, "pDir", player.dir);
+    shaderSetFloat(MarcherID, "iTime", currentTime);
     
     glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    // terrain updates
+    glUseProgram(UpdatesID);
+    glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
     // screen
     glUseProgram(ScreenID);
@@ -147,14 +157,12 @@ void updateSettings() {
     glBindImageTexture(0, screenTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     // sets raymarcher screen sizes
-    glUseProgram(MarcherID);
-    glUniform1i(glGetUniformLocation(MarcherID, "screenWidth"), screenWidth);
-    glUniform1i(glGetUniformLocation(MarcherID, "screenHeight"), screenHeight);
+    shaderSetInt(MarcherID, "screenWidth", screenWidth);
+    shaderSetInt(MarcherID, "screenHeight", screenHeight);
 
     // sets fragment shader screen sizes
-    glUseProgram(ScreenID);
-    glUniform1i(glGetUniformLocation(ScreenID, "screenWidth"), screenWidth);
-    glUniform1i(glGetUniformLocation(ScreenID, "screenHeight"), screenHeight);
+    shaderSetInt(ScreenID, "screenWidth", screenWidth);
+    shaderSetInt(ScreenID, "screenHeight", screenHeight);
 
     // set sampler uniform
     glActiveTexture(GL_TEXTURE0);

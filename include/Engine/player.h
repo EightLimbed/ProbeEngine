@@ -2,7 +2,6 @@
 #include <Engine/types.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
-#include <math.h>
 
 typedef struct {
   // physical
@@ -19,6 +18,11 @@ typedef struct {
   float yaw;
   float pitch;
 
+  // input
+  int mousePress; // held
+  int omp; // old mouse press
+  int mouseClick; // clicked
+
   // engine
   GLFWwindow *window;
 
@@ -32,6 +36,9 @@ void initializePlayer(player *p, vec3 pos, vec3 dir, float speed, float sensitiv
   p->sensitivity = sensitivity;
   p->pitch = asin(-p->dir.y);
   p->yaw = atan2(p->dir.x, p->dir.z);
+  p->mouseClick = 0;
+  p->omp = 0;
+  p->mousePress = 0;
 }
 
 void checkPlayer(player *p) {
@@ -92,6 +99,14 @@ void playerInputs(player *p, float deltaTime) {
 }
 
 void playerMouse(player *p) {
+  // mouse buttons
+  int left = glfwGetMouseButton(p->window, GLFW_MOUSE_BUTTON_LEFT);
+  int right = glfwGetMouseButton(p->window, GLFW_MOUSE_BUTTON_RIGHT);
+  p->mousePress = left-right; // -1 for right +1 for left
+  if (p->omp == p->mousePress) p->mouseClick = 0; // checks if change in mouse
+  else p->mouseClick = p->mousePress; // sets to change if there is
+  p->omp = p->mousePress;
+
   // delta mouse movement
   double mousePosX;
   double mousePosY;
