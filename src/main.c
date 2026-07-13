@@ -21,6 +21,8 @@ GLuint ssbo0; // probe data
 size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking, 8 bit floats
 GLuint ssbo1; // material data
 size_t ssbo1Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
+GLuint ssbo2; // auxillary/shared data
+size_t ssbo2Size = sizeof(GLfloat)*100;
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -46,17 +48,23 @@ int main() {
   initializePlayer(&player, pos, dir, 20.0, 0.005, window);}
 
   // creates SSBOs
-  // ssbo0
+  // ssbo0, distance data
   glGenBuffers(1, &ssbo0);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo0);
   glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo0Size, NULL, GL_DYNAMIC_DRAW);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo0);
 
-  // ssbo1
+  // ssbo1, material data
   glGenBuffers(1, &ssbo1);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo1);
   glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo1Size, NULL, GL_DYNAMIC_DRAW);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo1);
+
+  // ssbo2, auxillary/shared data
+  glGenBuffers(1, &ssbo2);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo2);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo2Size, NULL, GL_DYNAMIC_DRAW);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo2);
 
   // loads shaders
   // raymarcher
@@ -128,9 +136,22 @@ int main() {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
     // terrain updates
+    if (player.mouseClick != 0) {
+    vec3 editPos;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo2); // reads hit position
+    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLfloat)*3, &editPos);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
     glUseProgram(UpdatesID);
+    shaderSetVec3(UpdatesID, "uPos", editPos);
+    shaderSetFloat(UpdatesID, "uSize", 6.0);
+    shaderSetUint(UpdatesID, "uType", 0);
+    shaderSetUint(UpdatesID, "uMaterial", 7);
+    shaderSetInt(UpdatesID, "uPlace", player.mouseClick);
+
     glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
 
     // screen
     glUseProgram(ScreenID);
