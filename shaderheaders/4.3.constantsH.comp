@@ -1,5 +1,6 @@
 // common constants
 const uint chunkSize = 64u;
+const uint viewSize = 8u;
 const int raySteps = 160;
 const float renderDist = 512.0;
 const float e = 0.01; // max precision of 8 bit float

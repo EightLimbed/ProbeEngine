@@ -24,11 +24,3 @@ GLFWwindow *createWindow(int width, int height, char *name) {
 
   return window;
 }
-
-// initializes buffer at ID
-void createSSBO(GLuint ID, size_t size, int index) {
-  glGenBuffers(1, &ID);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, size, NULL, GL_DYNAMIC_DRAW);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ID);
-}

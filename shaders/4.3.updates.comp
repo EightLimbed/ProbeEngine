@@ -1,4 +1,4 @@
-#version 430 core
+#version 440 core
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
 
@@ -10,6 +10,11 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
+layout(std430, binding = 2) buffer ChunkIndexes {
+    uint chunkIndexes[];
+};
+
+uniform vec3 cPos = vec3(0); // position to regenerate chunk at
 uniform vec3 uPos = vec3(32,32,32); // position of edit
 uniform float uSize = 6.0; // size of edit 
 uniform uint uType = 0; // type of edit
@@ -34,19 +39,23 @@ float getEdit(vec3 p, uint i, float s) {
 }
 
 void main() {
-    uvec3 p = gl_GlobalInvocationID; // probe position
+    uvec3 lp = gl_GlobalInvocationID; // local probe position
+
+    vec3 p = lp+cPos; // gets global position of probe being updated
+    uint cIndex = getChunkIndex(p); // gets chunk index of update
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance
-    float od = getProbe(p); // gets current distance
+    float od = getProbe(lp,cIndex); // gets current distance
+    
     if (uPlace == -1) {
         if (nd<od) { // placing
-            //setMaterial(p,uMaterial);
-            setProbe(p,nd);
+            setMaterial(lp,cIndex,uMaterial);
+            setProbe(lp,cIndex,nd);
         }
     } else {
         if (-nd>od) { // breaking
-            //setMaterial(p,uMaterial);
-            setProbe(p,-nd);
+            //setMaterial(lp,cIndex,uMaterial);
+            setProbe(lp,cIndex,-nd);
         }
     }
 

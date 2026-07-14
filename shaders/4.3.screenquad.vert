@@ -1,4 +1,4 @@
-#version 430 core
+#version 440 core
 
 const vec2 quadVertices[4] = vec2[4](
     vec2(-1.0,-1.0),

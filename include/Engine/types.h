@@ -3,9 +3,7 @@
 #include <math.h>
 
 typedef struct {
-  float x;
-  float y;
-  float z;
+  float x,y,z;
 } vec3;
 
 vec3 add_f3(vec3 a, vec3 b) {

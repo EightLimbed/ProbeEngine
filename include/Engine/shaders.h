@@ -172,7 +172,7 @@ void shaderCompile(GLuint* shaderId, GLenum shaderType, const char* shaderFilePa
 
 GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
     if (vertexShader == 0 || fragmentShader == 0) {
-        printf("Not linking because shader compilation failed.\n");
+        printf("Not linking because shader compilation failed.\n\n");
         return 0;
     }
     GLuint program = glCreateProgram();
@@ -194,7 +194,7 @@ GLuint linkShaders(GLuint vertexShader, GLuint fragmentShader) {
 
 GLuint linkComputeShader(GLuint computeShader) {
     if (computeShader == 0) {
-        printf("Not linking because shader compilation failed.\n");
+        printf("Not linking because shader compilation failed.\n\n");
         return 0;
     }
 
@@ -232,4 +232,31 @@ void shaderSetInt(GLuint ID, const char* name, int value) {
 void shaderSetVec3(GLuint ID, const char* name, vec3 value) {
     glUseProgram(ID);
     glUniform3f(glGetUniformLocation(ID, name), value.x, value.y, value.z);
+}
+
+// initializes buffer at ID
+void createSSBO(GLuint ID, size_t size, int index) {
+  glGenBuffers(1, &ID);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, size, NULL, GL_DYNAMIC_DRAW); // could use glBufferStorage
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ID);
+}
+
+void* createAndPersistentlyMapSSBO(GLuint ID, size_t size, int index) {
+    // maps chunk buffer
+    glGenBuffers(1, &ID);
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID);
+
+    // define required flags for immutable storage
+    GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+
+    // allocate memory
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, size, NULL, storageFlags);
+
+    // retrieve cpu pointer
+    GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+    return glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, size, mapFlags);
+
+    // bind buffer to index
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ID);
 }

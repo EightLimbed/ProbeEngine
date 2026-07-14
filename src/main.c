@@ -19,14 +19,19 @@ GLuint TerrainID; // terrain generator
 GLuint screenTex; // screen
 
 // chunk data stuff handled in chunks.h
-const int chunkSize = 64;
-const int worldSize = 8; // world size in chunks
+const int chunkSize = 64; // chunk size in blocks
+const int chunkBlocks = chunkSize*chunkSize*chunkSize;
+const int viewSize = 8; // world size in chunks
+const int viewChunks = viewSize*viewSize*viewSize;
 GLuint ssbo0ID; // probe data
-size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking, 8 bit floats
+size_t ssbo0Size = sizeof(GLuint)*chunkBlocks/4*viewChunks; // /4 for bitpacking, 8 bit floats
+
 GLuint ssbo1ID; // material data
-size_t ssbo1Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
+size_t ssbo1Size = sizeof(GLuint)*chunkBlocks/8*viewChunks; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
+
 GLuint ssbo2ID; // chunk mapping data
-size_t ssbo2Size = sizeof(GLuint)*worldSize*worldSize*worldSize;
+size_t ssbo2Size = sizeof(GLuint)*viewChunks;
+uint* ssbo2Data; // chunk mapping persistently mapped data pointer
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -53,7 +58,7 @@ int main() {
   // creates SSBOs
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
-  createSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
+  ssbo2Data = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
 
   // loads shaders
   // raymarcher
@@ -107,7 +112,7 @@ int main() {
     playerMouse(&player);
 
     // clamps player within one chunk.
-    {vec3 A = {0.0,0.0,0.0}; vec3 B = {(float)chunkSize-1.0,(float)chunkSize-1.0,(float)chunkSize-1.0};
+    {vec3 A = {0.0,0.0,0.0}; vec3 B = {(float)(chunkSize*viewSize)-1.0,(float)(chunkSize*viewSize)-1.0,(float)(chunkSize*viewSize)-1.0};
     clampPlayer(&player, A, B);}
 
     // process other input
