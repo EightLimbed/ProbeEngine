@@ -13,11 +13,6 @@ layout(std430, binding = 1) buffer MaterialData {
 //include shaders/4.3.constantsH.comp
 //include shaders/4.3.functionsH.comp
 
-float sdBox(vec3 p, vec3 b) {
-    vec3 d = abs(p) - b;
-    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
-}
-
 float smin(float a, float b, float k) {
     float h = max(k-abs(a-b),0.0);
     return min(a, b) - h*h*0.25/k;
@@ -26,10 +21,6 @@ float smin(float a, float b, float k) {
 float smax(float a, float b, float k) {
     float h = max(k-abs(a-b),0.0);
     return max(a, b) + h*h*0.25/k;
-}
-
-float sphere(vec3 p, float r) {
-    return length(p)-r;
 }
 
 // correct way to repeat space every s units

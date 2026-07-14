@@ -1,6 +1,17 @@
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
 uint posToIndex(uvec3 p) {return p.x+chunkSize*(p.y+chunkSize*p.z);}
 
+// sphere sdf
+float sphere(vec3 p, float r) {
+    return length(p)-r;
+}
+
+// cube sdf
+float box(vec3 p, vec3 b) {
+    vec3 d = abs(p) - b;
+    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
+}
+
 // basic hash function
 float hash(vec3 p3) {
     p3 = fract(p3 * 0.1031);

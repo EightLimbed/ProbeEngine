@@ -1,4 +1,4 @@
-#include "glad/glad.h"
+// main file, handle uniform setting, object+player handling
 #include <Engine/load.h>
 #include <Engine/player.h>
 #include <GLFW/glfw3.h>
@@ -9,20 +9,21 @@ int screenWidth = 800;
 int screenHeight = 600;
 
 // shaders
-GLuint screenTex; // screen texture
-GLuint ScreenID;
-GLuint MarcherID;
-GLuint UpdatesID;
-GLuint TerrainID;
+GLuint ScreenID; // screenshader
+GLuint MarcherID; // raymarcher
+GLuint UpdatesID; // terrain edits/updates
+GLuint TerrainID; // terrain generator
+
+// textures
+GLuint screenTex; // screen
 
 // data
 const int chunkSize = 64;
-GLuint ssbo0; // probe data
+GLuint ssbo0ID; // probe data
 size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking, 8 bit floats
-GLuint ssbo1; // material data
+GLuint ssbo1ID; // material data
 size_t ssbo1Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
-GLuint ssbo2; // auxillary/shared data
-size_t ssbo2Size = sizeof(GLfloat)*100;
+GLuint ssbo2ID; // 
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -30,8 +31,7 @@ void processInput(GLFWwindow *window);
 void updateSettings();
 
 int main() {
-  //shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
-  //return 0;
+
   // creates a window
   GLFWwindow *window = createWindow(screenWidth, screenHeight, "I don't know");
   // temp
@@ -48,23 +48,8 @@ int main() {
   initializePlayer(&player, pos, dir, 20.0, 0.005, window);}
 
   // creates SSBOs
-  // ssbo0, distance data
-  glGenBuffers(1, &ssbo0);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo0);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo0Size, NULL, GL_DYNAMIC_DRAW);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo0);
-
-  // ssbo1, material data
-  glGenBuffers(1, &ssbo1);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo1);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo1Size, NULL, GL_DYNAMIC_DRAW);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo1);
-
-  // ssbo2, auxillary/shared data
-  glGenBuffers(1, &ssbo2);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo2);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, ssbo2Size, NULL, GL_DYNAMIC_DRAW);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo2);
+  createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
+  createSSBO(ssbo1ID, ssbo1Size, 1); // material data
 
   // loads shaders
   // raymarcher
@@ -87,6 +72,7 @@ int main() {
   shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
   TerrainID = linkComputeShader(TerrainID);
   
+  // updates settings to make sure everything is correct
   updateSettings();
 
   // bind vertex arrays (very important)
@@ -137,20 +123,18 @@ int main() {
 
     // terrain updates
     if (player.mouseClick != 0) {
-    vec3 editPos;
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo2); // reads hit position
-    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(GLfloat)*3, &editPos);
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+        
+        glUseProgram(UpdatesID);
+        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
+        shaderSetVec3(UpdatesID, "uPos", target);
+        //printf("%f, %f, %f\n", target.x, target.y, target.z);
+        shaderSetFloat(UpdatesID, "uSize", 6.0);
+        shaderSetUint(UpdatesID, "uType", 0);
+        shaderSetUint(UpdatesID, "uMaterial", 7);
+        shaderSetInt(UpdatesID, "uPlace", player.mouseClick);
 
-    glUseProgram(UpdatesID);
-    shaderSetVec3(UpdatesID, "uPos", editPos);
-    shaderSetFloat(UpdatesID, "uSize", 6.0);
-    shaderSetUint(UpdatesID, "uType", 0);
-    shaderSetUint(UpdatesID, "uMaterial", 7);
-    shaderSetInt(UpdatesID, "uPlace", player.mouseClick);
-
-    glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     }
 
     // screen

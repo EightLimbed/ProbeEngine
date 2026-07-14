@@ -19,15 +19,6 @@ uniform int uPlace = 0; // -1:place or 1:break
 //include shaders/4.3.constantsH.comp
 //include shaders/4.3.functionsH.comp
 
-float sphere(vec3 p, float r) {
-    return length(p)-r;
-}
-
-float box(vec3 p, vec3 b) {
-    vec3 d = abs(p) - b;
-    return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
-}
-
 // sets probe with 8 bit packing
 void setProbe(uvec3 p, float d) {
     uint index = posToIndex(p);
@@ -88,7 +79,7 @@ void main() {
     float od = getProbe(p); // gets current distance
     if (uPlace == -1) {
         if (nd<od) { // placing
-            setMaterial(p,uMaterial);
+            //setMaterial(p,uMaterial);
             setProbe(p,nd);
         }
     } else {
@@ -97,4 +88,6 @@ void main() {
             setProbe(p,-nd);
         }
     }
+
+    // maybe implement neighbor check for unreset probes
 }
