@@ -2,7 +2,8 @@
 #include <Engine/load.h>
 #include <Engine/player.h>
 #include <GLFW/glfw3.h>
-#include <Engine/shader.h>
+#include <Engine/shaders.h>
+#include <Engine/chunks.h>
 
 // screen
 int screenWidth = 800;
@@ -17,13 +18,15 @@ GLuint TerrainID; // terrain generator
 // textures
 GLuint screenTex; // screen
 
-// data
+// chunk data stuff handled in chunks.h
 const int chunkSize = 64;
+const int worldSize = 8; // world size in chunks
 GLuint ssbo0ID; // probe data
 size_t ssbo0Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/4; // /4 for bitpacking, 8 bit floats
 GLuint ssbo1ID; // material data
 size_t ssbo1Size = sizeof(GLuint)*chunkSize*chunkSize*chunkSize/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
-GLuint ssbo2ID; // 
+GLuint ssbo2ID; // chunk mapping data
+size_t ssbo2Size = sizeof(GLuint)*worldSize*worldSize*worldSize;
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -50,6 +53,7 @@ int main() {
   // creates SSBOs
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
+  createSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
 
   // loads shaders
   // raymarcher
@@ -81,13 +85,13 @@ int main() {
   glBindVertexArray(vao);
 
   // generate terrain
-  glUseProgram(TerrainID);
-  glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
-  glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+  vec3 sp = {0.0,0.0,0.0};
+  genSpawnChunks(sp);
 
   // frame time
   float deltaTime = 0.0f;
   float lastTime = 0.0f;
+  vec3 p = {0.0,0.0,0.0};
 
   // render loop
   while (!glfwWindowShouldClose(window)) {
@@ -120,6 +124,22 @@ int main() {
     glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    
+    if (glfwGetKey(window,GLFW_KEY_UP)==GLFW_PRESS){
+        p.x += 0.5;
+        genSpawnChunks(p);
+    } else if (glfwGetKey(window,GLFW_KEY_DOWN)==GLFW_PRESS){
+        p.x -= 0.5;
+        genSpawnChunks(p);
+    }
+    if (glfwGetKey(window,GLFW_KEY_RIGHT)==GLFW_PRESS){
+        p.z += 0.5;
+        genSpawnChunks(p);
+    } else if (glfwGetKey(window,GLFW_KEY_LEFT)==GLFW_PRESS){
+        p.z -= 0.5;
+        genSpawnChunks(p);
+    }
 
     // terrain updates
     if (player.mouseClick != 0) {

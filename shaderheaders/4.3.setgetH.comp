@@ -1,0 +1,52 @@
+// includes setters and getters for geometry
+
+// sets probe with 8 bit packing
+void setProbe(uvec3 p, float d) {
+    uint index = posToIndex(p);
+    uint uintIndex = index >> 2u;
+    uint subIndex = index & 3u;
+    uint bitShift = subIndex * 8u; // bit shift
+
+    vec4 probes = vec4(0.0);
+
+    probes[subIndex] = (d-dMin) / float(chunkSize); // set distance, normalized to 0-1
+
+    uint packedProbe = packUnorm4x8(probes);
+    uint clearMask = ~(0xFFu << bitShift); // clear bit
+
+    atomicAnd(probeData[uintIndex], clearMask);
+    atomicOr(probeData[uintIndex], packedProbe); // set value. need clear mask if overwriting
+}
+
+// sets material with 4 bit packing
+void setMaterial(uvec3 p, uint m) {
+    uint index = posToIndex(p);
+    uint uintIndex = index >> 3u;
+    uint bitShift = (index & 7u) * 4u; // bit shift
+
+    uint insert = (m & 0xFu) << bitShift;
+    uint clearMask = ~(0xFu << bitShift); // clear bit
+
+    atomicAnd(materialData[uintIndex], clearMask);
+    atomicOr(materialData[uintIndex], insert); // set value. need clear mask if overwriting
+}
+
+// gets probe with 8 bit packing
+float getProbe(uvec3 p) {
+    uint index = posToIndex(p);
+    uint uintIndex = index >> 2u;
+    uint subIndex = index & 3u;
+
+    vec4 values = unpackUnorm4x8(probeData[uintIndex]);
+
+    return ((values[subIndex]*float(chunkSize))+dMin);
+}
+
+// gets material with 4 bit packing
+uint getMaterial(uvec3 p) {
+    uint index = posToIndex(p);
+    uint uintIndex = index >> 3u;
+    uint bitShift = (index & 7u) * 4u; // shift amount
+
+    return (materialData[uintIndex] >> bitShift) & 0xFu;
+}

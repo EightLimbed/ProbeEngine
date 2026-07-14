@@ -1,3 +1,5 @@
+// material data
+
 vec4 colors[10] = {
     vec4(0.1,0.7,0.1,1.0), 
     vec4(0.1,0.8,0.0,1.0), 

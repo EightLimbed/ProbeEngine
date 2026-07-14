@@ -16,49 +16,10 @@ uniform uint uType = 0; // type of edit
 uniform uint uMaterial = 7;
 uniform int uPlace = 0; // -1:place or 1:break
 
-//include shaders/4.3.constantsH.comp
-//include shaders/4.3.functionsH.comp
+//include shaderheaders/4.3.constantsH.comp
+//include shaderheaders/4.3.functionsH.comp
+//include shaderheaders/4.3.setgetH.comp
 
-// sets probe with 8 bit packing
-void setProbe(uvec3 p, float d) {
-    uint index = posToIndex(p);
-    uint uintIndex = index >> 2u;
-    uint subIndex = index & 3u;
-    uint bitShift = subIndex * 8u; // bit shift
-
-    vec4 probes = vec4(0.0);
-
-    probes[subIndex] = (d-dMin) / float(chunkSize); // set distance, normalized to 0-1
-
-    uint packedProbe = packUnorm4x8(probes);
-    uint clearMask = ~(0xFFu << bitShift); // clear bit
-
-    atomicAnd(probeData[uintIndex], clearMask);
-    atomicOr(probeData[uintIndex], packedProbe); // set value. need clear mask if overwriting
-}
-
-// sets material with 4 bit packing
-void setMaterial(uvec3 p, uint m) {
-    uint index = posToIndex(p);
-    uint uintIndex = index >> 3u;
-    uint bitShift = (index & 7u) * 4u; // bit shift
-
-    uint insert = (m & 0xFu) << bitShift;
-    uint clearMask = ~(0xFu << bitShift); // clear bit
-
-    atomicAnd(materialData[uintIndex], clearMask);
-    atomicOr(materialData[uintIndex], insert); // set value. need clear mask if overwriting
-}
-
-float getProbe(uvec3 p) {
-    uint index = posToIndex(p);
-    uint uintIndex = index >> 2u;
-    uint subIndex = index & 3u;
-
-    vec4 values = unpackUnorm4x8(probeData[uintIndex]);
-
-    return ((values[subIndex]*float(chunkSize))+dMin);
-}
 
 // gets edit function at position and size
 float getEdit(vec3 p, uint i, float s) {

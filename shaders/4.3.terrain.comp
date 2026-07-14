@@ -10,8 +10,13 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-//include shaders/4.3.constantsH.comp
-//include shaders/4.3.functionsH.comp
+//include shaderheaders/4.3.constantsH.comp
+//include shaderheaders/4.3.functionsH.comp
+//include shaderheaders/4.3.setgetH.comp
+
+// parameters
+uniform vec3 cPos = ivec3(0); // position to generate chunk at
+uniform uint cIndex; // index at chunk to be generating
 
 float smin(float a, float b, float k) {
     float h = max(k-abs(a-b),0.0);
@@ -58,37 +63,13 @@ uint material(vec3 p) {
     return uint(p.y)%6u;
 }
 
-// sets probe with 8 bit packing
-void setProbe(uvec3 p, float d) {
-    uint index = posToIndex(p);
-    uint uintIndex = index >> 2u;
-    uint subIndex = index & 3u;
-
-    vec4 probes = vec4(0.0);
-
-    probes[subIndex] = (d-dMin) / float(chunkSize); // set distance, normalized to 0-1
-
-    uint packedProbe = packUnorm4x8(probes);
-
-    atomicOr(probeData[uintIndex], packedProbe); // set value. need clear mask if overwriting
-}
-
-// sets material with 4 bit packing
-void setMaterial(uvec3 p, uint m) {
-    uint index = posToIndex(p);
-    uint uintIndex = index >> 3u;
-    uint bitShift = (index & 7u) * 4u; // bit shift
-
-    uint insert = (m & 0xFu) << bitShift;
-
-    atomicOr(materialData[uintIndex], insert); // set value. need clear mask if overwriting
-}
-
 void main() {
-    uvec3 p = gl_GlobalInvocationID;
+    uvec3 cp = gl_GlobalInvocationID; // local chunk position
+    vec3 gp = vec3(cp)+cPos; // global position
     //float d = terrain(p+vec3(0.0,192.0,0.0), 0.05, 11, 2560.0, 1280.0);
-    float d = terrain(p, 0.05, 9, 256.0, 96.0);
-    uint mat = material(p);
-    setMaterial(p,mat);
-    setProbe(p,d);
+    float d = terrain(gp, 0.05, 9, 256.0, 96.0);
+    uint mat = material(gp);
+    // will pass in chunk index to these
+    setMaterial(cp,mat);
+    setProbe(cp,d);
 }

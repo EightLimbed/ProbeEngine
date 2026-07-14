@@ -1,3 +1,5 @@
+// stored functions
+
 // correct way to repeat space every s units
 float repeated(vec3 p, float s) {
     vec3 id = round(p/s);

@@ -20,30 +20,10 @@ uniform int screenWidth = 1;
 uniform int screenHeight = 1;
 uniform float iTime;
 
-//include shaders/4.3.constantsH.comp
-//include shaders/4.3.functionsH.comp
-//include shaders/4.3.materialsH.comp
-
-uint getMaterial(uvec3 p) {
-    uint index = posToIndex(p);
-    uint uintIndex = index >> 3u;
-    uint bitShift = (index & 7u) * 4u; // shift amount
-
-    return (materialData[uintIndex] >> bitShift) & 0xFu;
-}
-
-float getProbe(uvec3 p) {
-    uint index = posToIndex(p);
-    uint uintIndex = index >> 2u;
-    uint subIndex = index & 3u;
-
-    vec4 values = unpackUnorm4x8(probeData[uintIndex]);
-
-    float warp = 0.0;
-    if (getMaterial(p) == 7) warp = sin((iTime+p.y)*2.0)/3.0; // terrain specific typing uses only one call (no color blend)
-
-    return ((values[subIndex]*float(chunkSize))+dMin)+warp;
-}
+//include shaderheaders/4.3.constantsH.comp
+//include shaderheaders/4.3.functionsH.comp
+//include shaderheaders/4.3.materialsH.comp
+//include shaderheaders/4.3.setgetH.comp
 
 // interpolates between surrounding precomputed probe distances.
 float smoothDist(vec3 p) {
