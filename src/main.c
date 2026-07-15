@@ -18,16 +18,18 @@ GLuint TerrainID; // terrain generator
 // textures
 GLuint screenTex; // screen
 
-// chunk data stuff handled in chunks.h
+// chunk data stuff
 const int chunkSize = 64; // chunk size in blocks
-const int chunkBlocks = chunkSize*chunkSize*chunkSize;
+const int chunkProbes = chunkSize*chunkSize*chunkSize;
 const int viewSize = 8; // world size in chunks
 const int viewChunks = viewSize*viewSize*viewSize;
+const float halfFull = (float)(chunkSize*viewSize);
+
 GLuint ssbo0ID; // probe data
-size_t ssbo0Size = sizeof(GLuint)*chunkBlocks/4*viewChunks; // /4 for bitpacking, 8 bit floats
+size_t ssbo0Size = sizeof(GLuint)*chunkProbes/4*viewChunks; // /4 for bitpacking, 8 bit floats
 
 GLuint ssbo1ID; // material data
-size_t ssbo1Size = sizeof(GLuint)*chunkBlocks/8*viewChunks; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
+size_t ssbo1Size = sizeof(GLuint)*chunkProbes/8*viewChunks; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
 GLuint ssbo2ID; // chunk mapping data
 size_t ssbo2Size = sizeof(GLuint)*viewChunks;
@@ -51,9 +53,9 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {(float)chunkSize/2.0,(float)chunkSize/2.0,(float)chunkSize/2.0};
+  {vec3 pos = {halfFull/2.0,halfFull/2.0,halfFull/2.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 20.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
   // creates SSBOs
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
@@ -112,7 +114,7 @@ int main() {
     playerMouse(&player);
 
     // clamps player within one chunk.
-    {vec3 A = {0.0,0.0,0.0}; vec3 B = {(float)(chunkSize*viewSize)-1.0,(float)(chunkSize*viewSize)-1.0,(float)(chunkSize*viewSize)-1.0};
+    {vec3 A = {0.0,0.0,0.0}; vec3 B = {halfFull-1.0,halfFull-1.0,halfFull-1.0};
     clampPlayer(&player, A, B);}
 
     // process other input
@@ -129,22 +131,6 @@ int main() {
     glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-
-    
-    if (glfwGetKey(window,GLFW_KEY_UP)==GLFW_PRESS){
-        p.x += 0.5;
-        genSpawnChunks(p);
-    } else if (glfwGetKey(window,GLFW_KEY_DOWN)==GLFW_PRESS){
-        p.x -= 0.5;
-        genSpawnChunks(p);
-    }
-    if (glfwGetKey(window,GLFW_KEY_RIGHT)==GLFW_PRESS){
-        p.z += 0.5;
-        genSpawnChunks(p);
-    } else if (glfwGetKey(window,GLFW_KEY_LEFT)==GLFW_PRESS){
-        p.z -= 0.5;
-        genSpawnChunks(p);
-    }
 
     // terrain updates
     if (player.mouseClick != 0) {

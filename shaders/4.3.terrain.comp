@@ -4,6 +4,7 @@ layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local thr
 
 layout(std430, binding = 0) buffer ProbeData {
     uint probeData[];
+    //uint materialDat1a[];
 };
 
 layout(std430, binding = 1) buffer MaterialData {
@@ -67,13 +68,13 @@ uint material(vec3 p) {
 }
 
 void main() {
-    uvec3 lp = gl_GlobalInvocationID; // local chunk position
-    vec3 p = vec3(lp+cPos); // global position
-    uint cIndex = getChunkIndex(p);
-    //float d = terrain(p+vec3(0.0,192.0,0.0), 0.05, 11, 2560.0, 1280.0);
-    float d = terrain(p, 0.05, 9, 256.0, 96.0);
+    uvec3 pp = gl_GlobalInvocationID; // local chunk position
+    vec3 p = vec3(pp+cPos*chunkSize); // global position
+
+    float d = terrain(p, 0.04, 9, 2560.0, 1280.0);
     uint mat = material(p);
     // will pass in chunk index to these
-    setMaterial(lp,cIndex,mat);
-    setProbe(lp,cIndex,d);
+    uvec3 lp = getLocalPos(p);
+    setMaterial(lp,mat);
+    setProbe(lp,d);
 }

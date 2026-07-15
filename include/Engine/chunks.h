@@ -33,18 +33,12 @@ void generateChunk(vec3 pos) {
 
 // need function for the first pass upon loading where you assign a index to every chunk position (will do grid with posToIndex function)
 void genSpawnChunks(vec3 pos) {
-    for (int x = 0; x < viewSize; x++)
-    for (int y = 0; y < viewSize; y++)
-    for (int z = 0; z < viewSize; z++) {
-        vec3 p = {(float)x,(float)y,(float)z};
-        ssbo2Data[posToChunkIndex(p)] = posToChunkIndex(multiply_f3xf(p, (float)chunkSize)); // writing not working
-    }
-    
+    // pos currently unused
     for (int x = 0; x < viewSize; x++) 
     for (int y = 0; y < viewSize; y++)
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
-        generateChunk(multiply_f3xf(p, (float)chunkSize)); // generates chunk at position
+        generateChunk(p); // generates chunk at position
     }
 }
 

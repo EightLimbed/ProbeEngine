@@ -1,3 +1,5 @@
+// need to remember to keep updates inside chunks. Having dispatch overlap will break when they get shuffled around
+
 #version 440 core
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
@@ -14,8 +16,7 @@ layout(std430, binding = 2) buffer ChunkIndexes {
     uint chunkIndexes[];
 };
 
-uniform vec3 cPos = vec3(0); // position to regenerate chunk at
-uniform vec3 uPos = vec3(32,32,32); // position of edit
+uniform vec3 uPos; // position of edit
 uniform float uSize = 6.0; // size of edit 
 uniform uint uType = 0; // type of edit
 uniform uint uMaterial = 7;
@@ -39,23 +40,24 @@ float getEdit(vec3 p, uint i, float s) {
 }
 
 void main() {
-    uvec3 lp = gl_GlobalInvocationID; // local probe position
+    uvec3 pp = gl_GlobalInvocationID; // local probe position
+    uvec3 cp = uvec3(round(uPos))-uvec3(round(uPos))%chunkSize;
 
-    vec3 p = lp+cPos; // gets global position of probe being updated
-    uint cIndex = getChunkIndex(p); // gets chunk index of update
+    vec3 p = cp+pp;
+    uvec3 lp = getLocalPos(p);
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance
-    float od = getProbe(lp,cIndex); // gets current distance
+    float od = getProbe(lp); // gets current distance
     
     if (uPlace == -1) {
         if (nd<od) { // placing
-            setMaterial(lp,cIndex,uMaterial);
-            setProbe(lp,cIndex,nd);
+            setMaterial(lp,uMaterial);
+            setProbe(lp,nd);
         }
     } else {
         if (-nd>od) { // breaking
-            //setMaterial(lp,cIndex,uMaterial);
-            setProbe(lp,cIndex,-nd);
+            //setMaterial(lp,uMaterial);
+            setProbe(lp,-nd);
         }
     }
 

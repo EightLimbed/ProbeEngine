@@ -29,19 +29,25 @@ uniform float iTime;
 //include shaderheaders/4.3.materialsH.comp
 //include shaderheaders/4.3.setgetH.comp
 
+float getProbeWarped(uvec3 lp) {
+    float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
+    return getProbe(lp)+warp;
+}
+
 // interpolates between surrounding precomputed probe distances.
 float smoothDist(vec3 p) {
     uvec3 lp = getLocalPos(p);
     vec3 f = fract(p);
+
     
-    float d000 = getProbe(lp + uvec3(0,0,0), getChunkIndex(p));
-    float d100 = getProbe(lp + uvec3(1,0,0), getChunkIndex(p));
-    float d010 = getProbe(lp + uvec3(0,1,0), getChunkIndex(p));
-    float d110 = getProbe(lp + uvec3(1,1,0), getChunkIndex(p));
-    float d001 = getProbe(lp + uvec3(0,0,1), getChunkIndex(p));
-    float d101 = getProbe(lp + uvec3(1,0,1), getChunkIndex(p));
-    float d011 = getProbe(lp + uvec3(0,1,1), getChunkIndex(p));
-    float d111 = getProbe(lp + uvec3(1,1,1), getChunkIndex(p));
+    float d000 = getProbeWarped(lp + uvec3(0,0,0));
+    float d100 = getProbeWarped(lp + uvec3(1,0,0));
+    float d010 = getProbeWarped(lp + uvec3(0,1,0));
+    float d110 = getProbeWarped(lp + uvec3(1,1,0));
+    float d001 = getProbeWarped(lp + uvec3(0,0,1));
+    float d101 = getProbeWarped(lp + uvec3(1,0,1));
+    float d011 = getProbeWarped(lp + uvec3(0,1,1));
+    float d111 = getProbeWarped(lp + uvec3(1,1,1));
 
     // x interpolation
     float x00 = mix(d000, d100, f.x);
@@ -65,14 +71,14 @@ vec4 smoothColor(vec3 p) {
     f = f*f;
     
     // need bounds checks, but this should work otherwise for now
-    vec4 c000 = colors[getMaterial(lp + uvec3(0,0,0), getChunkIndex(p))];
-    vec4 c100 = colors[getMaterial(lp + uvec3(1,0,0), getChunkIndex(p))];
-    vec4 c010 = colors[getMaterial(lp + uvec3(0,1,0), getChunkIndex(p))];
-    vec4 c110 = colors[getMaterial(lp + uvec3(1,1,0), getChunkIndex(p))];
-    vec4 c001 = colors[getMaterial(lp + uvec3(0,0,1), getChunkIndex(p))];
-    vec4 c101 = colors[getMaterial(lp + uvec3(1,0,1), getChunkIndex(p))];
-    vec4 c011 = colors[getMaterial(lp + uvec3(0,1,1), getChunkIndex(p))];
-    vec4 c111 = colors[getMaterial(lp + uvec3(1,1,1), getChunkIndex(p))];
+    vec4 c000 = colors[getMaterial(lp + uvec3(0,0,0))];
+    vec4 c100 = colors[getMaterial(lp + uvec3(1,0,0))];
+    vec4 c010 = colors[getMaterial(lp + uvec3(0,1,0))];
+    vec4 c110 = colors[getMaterial(lp + uvec3(1,1,0))];
+    vec4 c001 = colors[getMaterial(lp + uvec3(0,0,1))];
+    vec4 c101 = colors[getMaterial(lp + uvec3(1,0,1))];
+    vec4 c011 = colors[getMaterial(lp + uvec3(0,1,1))];
+    vec4 c111 = colors[getMaterial(lp + uvec3(1,1,1))];
 
     // x interpolation
     vec4 x00 = mix(c000, c100, f.x);
@@ -125,7 +131,7 @@ void main() {
         vec3 p = ro+rd*t; // calculate ray position
         float d = smoothDist(p);
 
-        //if (clamp(p, vec3(0.0), vec3(chunkSize)) != p) break; // borders (temp)
+        if (clamp(p, vec3(0.0), vec3(chunkSize*viewSize)) != p) break; // borders (temp)
         if (d < e) { 
             // coloring and stuff
             float falloff = float(i)/float(raySteps);
@@ -138,7 +144,7 @@ void main() {
         
         t+=max(d,e); // step ray
         
-        if (t>renderDist) break;
+        //if (t>renderDist) break;
     }
     imageStore(screen, fragCoord, vec4(0.0,0.4,1.0,1.0));
 }
