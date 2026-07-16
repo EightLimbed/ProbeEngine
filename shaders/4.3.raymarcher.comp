@@ -39,15 +39,16 @@ float smoothDist(vec3 p) {
     uvec3 lp = getLocalPos(p);
     vec3 f = fract(p);
 
-    
-    float d000 = getProbeWarped(lp + uvec3(0,0,0));
-    float d100 = getProbeWarped(lp + uvec3(1,0,0));
-    float d010 = getProbeWarped(lp + uvec3(0,1,0));
-    float d110 = getProbeWarped(lp + uvec3(1,1,0));
-    float d001 = getProbeWarped(lp + uvec3(0,0,1));
-    float d101 = getProbeWarped(lp + uvec3(1,0,1));
-    float d011 = getProbeWarped(lp + uvec3(0,1,1));
-    float d111 = getProbeWarped(lp + uvec3(1,1,1));
+    uvec3 mini = getChunkPos(lp);
+    uvec3 maxi = mini+chunkSize;
+    float d000 = getProbeWarped(clamp(lp + uvec3(0,0,0),mini,maxi));
+    float d100 = getProbeWarped(clamp(lp + uvec3(1,0,0),mini,maxi));
+    float d010 = getProbeWarped(clamp(lp + uvec3(0,1,0),mini,maxi));
+    float d110 = getProbeWarped(clamp(lp + uvec3(1,1,0),mini,maxi));
+    float d001 = getProbeWarped(clamp(lp + uvec3(0,0,1),mini,maxi));
+    float d101 = getProbeWarped(clamp(lp + uvec3(1,0,1),mini,maxi));
+    float d011 = getProbeWarped(clamp(lp + uvec3(0,1,1),mini,maxi));
+    float d111 = getProbeWarped(clamp(lp + uvec3(1,1,1),mini,maxi));
 
     // x interpolation
     float x00 = mix(d000, d100, f.x);
@@ -71,14 +72,16 @@ vec4 smoothColor(vec3 p) {
     f = f*f;
     
     // need bounds checks, but this should work otherwise for now
-    vec4 c000 = colors[getMaterial(lp + uvec3(0,0,0))];
-    vec4 c100 = colors[getMaterial(lp + uvec3(1,0,0))];
-    vec4 c010 = colors[getMaterial(lp + uvec3(0,1,0))];
-    vec4 c110 = colors[getMaterial(lp + uvec3(1,1,0))];
-    vec4 c001 = colors[getMaterial(lp + uvec3(0,0,1))];
-    vec4 c101 = colors[getMaterial(lp + uvec3(1,0,1))];
-    vec4 c011 = colors[getMaterial(lp + uvec3(0,1,1))];
-    vec4 c111 = colors[getMaterial(lp + uvec3(1,1,1))];
+    uvec3 mini = getChunkPos(lp);
+    uvec3 maxi = mini+chunkSize;
+    vec4 c000 = colors[getMaterial(clamp(lp + uvec3(0,0,0),mini,maxi))];
+    vec4 c100 = colors[getMaterial(clamp(lp + uvec3(1,0,0),mini,maxi))];
+    vec4 c010 = colors[getMaterial(clamp(lp + uvec3(0,1,0),mini,maxi))];
+    vec4 c110 = colors[getMaterial(clamp(lp + uvec3(1,1,0),mini,maxi))];
+    vec4 c001 = colors[getMaterial(clamp(lp + uvec3(0,0,1),mini,maxi))];
+    vec4 c101 = colors[getMaterial(clamp(lp + uvec3(1,0,1),mini,maxi))];
+    vec4 c011 = colors[getMaterial(clamp(lp + uvec3(0,1,1),mini,maxi))];
+    vec4 c111 = colors[getMaterial(clamp(lp + uvec3(1,1,1),mini,maxi))];
 
     // x interpolation
     vec4 x00 = mix(c000, c100, f.x);
@@ -98,7 +101,7 @@ vec4 smoothColor(vec3 p) {
 
 // Paulo Falcao technique
 vec3 getNormal(vec3 p) {
-    const float h = e*10.0; // replace by an appropriate value
+    const float h = 0.2; // higher coefficient makes things look smoother
     const vec2 k = vec2(1,-1);
     return normalize(k.xyy*smoothDist(p + k.xyy*h) + 
                      k.yyx*smoothDist(p + k.yyx*h) + 
@@ -115,6 +118,19 @@ vec3 getRayDir(vec2 fragCoord, vec2 res, vec3 lookAt, float zoom) {
     return normalize(f + zoom * (uv.x*r + uv.y*u));
 }
 
+// if ray goes outside of chunk, steps back to be within chunk
+float clampInChunk(vec3 ro, vec3 rd, vec3 cp, float l) {
+    vec3 dr = 1.0 / rd;
+
+    vec3 t0 = (cp - ro) * dr;
+    vec3 t1 = (cp + l - ro) * dr;
+
+    vec3 tMax = max(t0, t1);
+    float t = min(min(tMax.x, tMax.y), tMax.z);
+
+    return t;
+}
+
 void main() {
     ivec2 fragCoord = ivec2(gl_GlobalInvocationID.xy);
 
@@ -126,25 +142,27 @@ void main() {
     float t = 0.0;
     vec3 ro = pPos;
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
+    float d = smoothDist(ro);
     for (int i = 0; i < raySteps; i++) {
 
         vec3 p = ro+rd*t; // calculate ray position
-        float d = smoothDist(p);
-
         if (clamp(p, vec3(0.0), vec3(chunkSize*viewSize)) != p) break; // borders (temp)
+
+        d = smoothDist(p);
+
         if (d < e) { 
             // coloring and stuff
             float falloff = float(i)/float(raySteps);
-            float shadow = max(1.0-dot(getNormal(p),vec3(1.0)),0.3); // basic shading
+            float shadow = max(1.0-dot(getNormal(p),vec3(-1.0)),0.3); // basic shading
             vec4 color = smoothColor(p);
 
             imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),falloff*falloff));
             return;
         }
+        float cd = clampInChunk(p, rd, vec3(getChunkPos(p)), float(chunkSize)); // distance to chunk border
+        //if (cd<d) break;
         
-        t+=max(d,e); // step ray
-        
-        //if (t>renderDist) break;
+        t+=max(min(d,cd),e); // step ray
     }
     imageStore(screen, fragCoord, vec4(0.0,0.4,1.0,1.0));
 }

@@ -2,22 +2,21 @@
 // p is global position vec3, lp is local position v3(0:x) blocks in view
 // use local pos for all sampling to keep camera centered within chunks
 
+// also will handle chunk shuffling, ie getting chunk pos, and matching to actual position, before updating, as well as matching to chunk position
 uvec3 getLocalPos(vec3 p) {
     return uvec3(floor(p))%(viewSize*chunkSize);
+}
+
+
+// not to be used for indexing, just clamps position physically to chunk border
+uvec3 getChunkPos(vec3 p) {
+    return uvec3(floor(p / chunkSize)) * chunkSize;
 }
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
 uint posToIndex(uvec3 lp) {
     uint full = (chunkSize*viewSize);
     return lp.x+full*(lp.y+full*lp.z);
-}
-
-// takes position and spits out the index of chunk it is in
-uint getChunkIndex(vec3 p) {
-    uvec3 cp = uvec3(floor(p/float(chunkSize))); // gets chunk position
-    uint i = cp.x+viewSize*(cp.y+viewSize*cp.z); // index of chunk
-    return chunkIndexes[i];
-    //return 0;
 }
 
 // sets probe with 8 bit packing

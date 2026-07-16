@@ -1,5 +1,3 @@
-// need to remember to keep updates inside chunks. Having dispatch overlap will break when they get shuffled around
-
 #version 440 core
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
@@ -41,7 +39,7 @@ float getEdit(vec3 p, uint i, float s) {
 
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local probe position
-    uvec3 cp = uvec3(round(uPos))-uvec3(round(uPos))%chunkSize;
+    uvec3 cp = getChunkPos(uPos); // currently getting chunk pos, later will pass that in and run on chunks that need updates.
 
     vec3 p = cp+pp;
     uvec3 lp = getLocalPos(p);

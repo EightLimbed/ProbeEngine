@@ -21,7 +21,7 @@ GLuint screenTex; // screen
 // chunk data stuff
 const int chunkSize = 64; // chunk size in blocks
 const int chunkProbes = chunkSize*chunkSize*chunkSize;
-const int viewSize = 8; // world size in chunks
+const int viewSize = 6; // world size in chunks, 24 max rn
 const int viewChunks = viewSize*viewSize*viewSize;
 const float halfFull = (float)(chunkSize*viewSize);
 
@@ -53,7 +53,7 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {halfFull/2.0,halfFull/2.0,halfFull/2.0};
+  {vec3 pos = {38,232,53};//{halfFull/2.0,halfFull/2.0,halfFull/2.0};
   vec3 dir = {0.0,0.0,1.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
@@ -116,6 +116,7 @@ int main() {
     // clamps player within one chunk.
     {vec3 A = {0.0,0.0,0.0}; vec3 B = {halfFull-1.0,halfFull-1.0,halfFull-1.0};
     clampPlayer(&player, A, B);}
+    //checkPlayer(&player);
 
     // process other input
     processInput(window);
@@ -139,7 +140,7 @@ int main() {
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
         shaderSetVec3(UpdatesID, "uPos", target);
         //printf("%f, %f, %f\n", target.x, target.y, target.z);
-        shaderSetFloat(UpdatesID, "uSize", 6.0);
+        shaderSetFloat(UpdatesID, "uSize", 12.0);
         shaderSetUint(UpdatesID, "uType", 0);
         shaderSetUint(UpdatesID, "uMaterial", 7);
         shaderSetInt(UpdatesID, "uPlace", player.mouseClick);
