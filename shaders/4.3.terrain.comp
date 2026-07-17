@@ -71,7 +71,7 @@ void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
     vec3 p = vec3(pp+cPos*chunkSize); // global position
 
-    float d = terrain(p, 0.04, 9, 2560.0, 1280.0);
+    float d = terrain(p, 0.04, 6, 2560.0, 1280.0);
     uint mat = material(p);
     // will pass in chunk index to these
     uvec3 lp = getLocalPos(p);

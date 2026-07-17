@@ -19,11 +19,12 @@ GLuint TerrainID; // terrain generator
 GLuint screenTex; // screen
 
 // chunk data stuff
-const int chunkSize = 64; // chunk size in blocks
-const int chunkProbes = chunkSize*chunkSize*chunkSize;
+const int chunkSize = 63; // chunk size in blocks
+const int dataSize = chunkSize+1; // need +1 for boundaries
+const int chunkProbes = dataSize*dataSize*dataSize;
 const int viewSize = 6; // world size in chunks, 24 max rn
 const int viewChunks = viewSize*viewSize*viewSize;
-const float halfFull = (float)(chunkSize*viewSize);
+const float full = (float)(dataSize*viewSize);
 
 GLuint ssbo0ID; // probe data
 size_t ssbo0Size = sizeof(GLuint)*chunkProbes/4*viewChunks; // /4 for bitpacking, 8 bit floats
@@ -53,7 +54,7 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {38,232,53};//{halfFull/2.0,halfFull/2.0,halfFull/2.0};
+  {vec3 pos = {38,232,53};//{full/2.0,halfFull/2.0,halfFull/2.0};
   vec3 dir = {0.0,0.0,1.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
@@ -114,7 +115,7 @@ int main() {
     playerMouse(&player);
 
     // clamps player within one chunk.
-    {vec3 A = {0.0,0.0,0.0}; vec3 B = {halfFull-1.0,halfFull-1.0,halfFull-1.0};
+    {vec3 A = {0.0,0.0,0.0}; vec3 B = {full-viewSize,full-viewSize,full-viewSize};
     clampPlayer(&player, A, B);}
     //checkPlayer(&player);
 
@@ -135,18 +136,8 @@ int main() {
 
     // terrain updates
     if (player.mouseClick != 0) {
-        
-        glUseProgram(UpdatesID);
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
-        shaderSetVec3(UpdatesID, "uPos", target);
-        //printf("%f, %f, %f\n", target.x, target.y, target.z);
-        shaderSetFloat(UpdatesID, "uSize", 12.0);
-        shaderSetUint(UpdatesID, "uType", 0);
-        shaderSetUint(UpdatesID, "uMaterial", 7);
-        shaderSetInt(UpdatesID, "uPlace", player.mouseClick);
-
-        glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        applyUpdate(target, player.mouseClick, 0, 6.0, 7);
     }
 
     // screen

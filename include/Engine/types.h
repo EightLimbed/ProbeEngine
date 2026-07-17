@@ -1,5 +1,5 @@
 #pragma once
-
+#define uint unsigned int
 #include <math.h>
 
 typedef struct {

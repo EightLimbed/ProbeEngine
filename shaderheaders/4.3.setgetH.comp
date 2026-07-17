@@ -4,13 +4,12 @@
 
 // also will handle chunk shuffling, ie getting chunk pos, and matching to actual position, before updating, as well as matching to chunk position
 uvec3 getLocalPos(vec3 p) {
-    return uvec3(floor(p))%(viewSize*chunkSize);
+    return uvec3(floor(p));
 }
 
-
 // not to be used for indexing, just clamps position physically to chunk border
-uvec3 getChunkPos(vec3 p) {
-    return uvec3(floor(p / chunkSize)) * chunkSize;
+vec3 getChunkPos(vec3 p) {
+    return floor(p / chunkSize) * chunkSize;
 }
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.

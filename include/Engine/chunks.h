@@ -2,11 +2,9 @@
 #pragma once
 #include <Engine/types.h>
 #include <Engine/shaders.h>
-#define uint unsigned int
 
 // data stuff
-extern const int chunkSize;
-extern const int chunkBlocks;
+extern const int dataSize;
 extern const int viewSize; // view size in chunks
 extern const int viewChunks;
 extern GLuint ssbo2ID; // chunk mapping data
@@ -18,6 +16,9 @@ extern uint* ssbo2Data;
 // terrain generator
 extern GLuint TerrainID;
 
+// updater
+extern GLuint UpdatesID;
+
 // takes position of chunk and spits out index.
 unsigned int posToChunkIndex(vec3 p) {
     return (uint)p.x+viewChunks*((uint)p.y+viewChunks*(uint)p.z);
@@ -27,7 +28,7 @@ unsigned int posToChunkIndex(vec3 p) {
 void generateChunk(vec3 pos) {
     glUseProgram(TerrainID);
     shaderSetVec3(TerrainID, "cPos", pos);
-    glDispatchCompute((chunkSize+3)/4,(chunkSize)/4,(chunkSize+3)/4);
+    glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
@@ -45,3 +46,23 @@ void genSpawnChunks(vec3 pos) {
 // need function to update chunk indexes when player moves. Will set indexes moved out of to new chunks indexes.
 
 // need function to apply updates to chunks when necessary
+void applyUpdate(vec3 target, int click, uint type, float size, uint material) {
+    for (int x = -1; x < 2; x++) 
+    for (int y = -1; y < 2; y++)
+    for (int z = -1; z < 2; z++) {
+        vec3 offset = {(float)x,(float)y,(float)z};
+        glUseProgram(UpdatesID);
+        
+        shaderSetVec3(UpdatesID, "uPos", target);
+        shaderSetInt(UpdatesID, "uClick", click);
+        shaderSetUint(UpdatesID, "uType", type);
+        shaderSetFloat(UpdatesID, "uSize", size);
+        shaderSetUint(UpdatesID, "uMaterial", material);
+        
+        shaderSetVec3(UpdatesID, "cOffset", offset); // chunk offset position
+        
+
+        glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    }
+}

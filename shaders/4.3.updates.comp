@@ -15,10 +15,11 @@ layout(std430, binding = 2) buffer ChunkIndexes {
 };
 
 uniform vec3 uPos; // position of edit
-uniform float uSize = 6.0; // size of edit 
-uniform uint uType = 0; // type of edit
-uniform uint uMaterial = 7;
-uniform int uPlace = 0; // -1:place or 1:break
+uniform int uClick; // -1:place or 1:break
+uniform float uSize; // size of edit 
+uniform uint uType; // type of edit
+uniform uint uMaterial;
+uniform vec3 cOffset; // offset for surrounding chunks to be updated as well.
 
 //include shaderheaders/4.3.constantsH.comp
 //include shaderheaders/4.3.functionsH.comp
@@ -39,15 +40,15 @@ float getEdit(vec3 p, uint i, float s) {
 
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local probe position
-    uvec3 cp = getChunkPos(uPos); // currently getting chunk pos, later will pass that in and run on chunks that need updates.
+    vec3 cp = getChunkPos(uPos); // get chunk position of update
 
-    vec3 p = cp+pp;
+    vec3 p = cp+pp+cOffset*chunkSize;
     uvec3 lp = getLocalPos(p);
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance
     float od = getProbe(lp); // gets current distance
     
-    if (uPlace == -1) {
+    if (uClick == -1) {
         if (nd<od) { // placing
             setMaterial(lp,uMaterial);
             setProbe(lp,nd);
