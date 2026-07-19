@@ -2,14 +2,24 @@
 // p is global position vec3, lp is local position v3(0:x) blocks in view
 // use local pos for all sampling to keep camera centered within chunks
 
-// also will handle chunk shuffling, ie getting chunk pos, and matching to actual position, before updating, as well as matching to chunk position
+// will handle chunk shuffling, ie getting chunk pos, and matching to actual position, before updating, as well as matching to chunk position
+// also need to handle global position offset, ie: chunks player has travelled in each direction.
 uvec3 getLocalPos(vec3 p) {
+    // pseudocode design
+    // get chunk pos
+    // posToChunkIndex in chunkIndexes to get assigned chunk pos, and add to this result, replacing old chunk pos.
     return uvec3(floor(p));
 }
 
 // not to be used for indexing, just clamps position physically to chunk border
 vec3 getChunkPos(vec3 p) {
     return floor(p / chunkSize) * chunkSize;
+}
+
+// takes chunk position and spits out index in prefix array, not sure if functional yet
+uint posToChunkIndex(vec3 p) {
+    uvec3 ucp = uvec3(getChunkPos(p)/chunkSize);
+    return ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
 }
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.

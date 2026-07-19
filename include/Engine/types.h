@@ -30,6 +30,14 @@ vec3 multiply_f3xf(vec3 a, float f) {
   return c;
 }
 
+vec3 floor_f3(vec3 a) {
+  vec3 c;
+  c.x = floor(a.x);
+  c.y = floor(a.y);
+  c.z = floor(a.z);
+  return c;
+}
+
 vec3 cross(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.y*b.z-a.z*b.y;

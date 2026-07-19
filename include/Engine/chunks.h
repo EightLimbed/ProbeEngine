@@ -5,6 +5,7 @@
 
 // data stuff
 extern const int dataSize;
+extern const int chunkSize;
 extern const int viewSize; // view size in chunks
 extern const int viewChunks;
 extern GLuint ssbo2ID; // chunk mapping data
@@ -19,15 +20,25 @@ extern GLuint TerrainID;
 // updater
 extern GLuint UpdatesID;
 
-// takes position of chunk and spits out index.
-unsigned int posToChunkIndex(vec3 p) {
-    return (uint)p.x+viewChunks*((uint)p.y+viewChunks*(uint)p.z);
+// empty checker
+extern GLuint CheckerID;
+
+vec3 getChunkPos(vec3 p) {
+    float cs = (float)chunkSize;
+    return multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0/cs)),cs);
 }
 
-// need function to generate chunk at a position
+// generates chunk at position
 void generateChunk(vec3 pos) {
     glUseProgram(TerrainID);
     shaderSetVec3(TerrainID, "cPos", pos);
+    glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
+void checkChunk(vec3 pos) {
+    glUseProgram(CheckerID);
+    shaderSetVec3(CheckerID, "cPos", pos);
     glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
@@ -39,18 +50,20 @@ void genSpawnChunks(vec3 pos) {
     for (int y = 0; y < viewSize; y++)
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
-        generateChunk(p); // generates chunk at position
+        generateChunk(multiply_f3xf(p, (float)chunkSize)); // generates chunk at position
+        checkChunk(multiply_f3xf(p, (float)chunkSize));
     }
 }
 
 // need function to update chunk indexes when player moves. Will set indexes moved out of to new chunks indexes.
 
-// need function to apply updates to chunks when necessary
+// applies updates when necessary
 void applyUpdate(vec3 target, int click, uint type, float size, uint material) {
     for (int x = -1; x < 2; x++) 
     for (int y = -1; y < 2; y++)
     for (int z = -1; z < 2; z++) {
         vec3 offset = {(float)x,(float)y,(float)z};
+        vec3 cPos = add_f3(getChunkPos(target),multiply_f3xf(offset, (float)chunkSize));
         glUseProgram(UpdatesID);
         
         shaderSetVec3(UpdatesID, "uPos", target);
@@ -59,10 +72,11 @@ void applyUpdate(vec3 target, int click, uint type, float size, uint material) {
         shaderSetFloat(UpdatesID, "uSize", size);
         shaderSetUint(UpdatesID, "uMaterial", material);
         
-        shaderSetVec3(UpdatesID, "cOffset", offset); // chunk offset position
-        
+        shaderSetVec3(UpdatesID, "cPos", cPos); // chunk offset position
 
         glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+        checkChunk(cPos);
     }
 }

@@ -11,7 +11,7 @@ layout(std430, binding = 1) buffer MaterialData {
 };
 
 layout(std430, binding = 2) buffer ChunkIndexes {
-    uint chunkIndexes[];
+    int chunkIndexes[];
 };
 
 // player data
@@ -30,8 +30,8 @@ uniform float iTime;
 //include shaderheaders/4.3.setgetH.comp
 
 float getProbeWarped(uvec3 lp) {
-    float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
-    return getProbe(lp)+warp;
+    //float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
+    return getProbe(lp);//+warp;
 }
 
 // interpolates between surrounding precomputed probe distances.
@@ -69,7 +69,6 @@ float smoothDist(vec3 p) {
 vec4 smoothColor(vec3 p) {
     uvec3 lp = getLocalPos(p);
     vec3 f = fract(p);
-    f = f*f;
     
     // need bounds checks, but this should work otherwise for now
     uvec3 mini = uvec3(getChunkPos(p));
@@ -101,7 +100,7 @@ vec4 smoothColor(vec3 p) {
 
 // Paulo Falcao technique
 vec3 getNormal(vec3 p) {
-    const float h = 0.2; // higher coefficient makes things look smoother
+    const float h = e*20.0; // higher coefficient makes things look smoother
     const vec2 k = vec2(1,-1);
     return normalize(k.xyy*smoothDist(p + k.xyy*h) + 
                      k.yyx*smoothDist(p + k.yyx*h) + 
@@ -137,28 +136,37 @@ void main() {
     vec3 ro = pPos;
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
     vec3 p = ro;
+    float collect = 0.0;
     for (int i = 0; i < raySteps; i++) {
 
         p = ro+rd*t; // calculate ray position
-        vec3 cp = getChunkPos(p);
-
         if (clamp(p, vec3(0.0), vec3(chunkSize*viewSize)) != p) break; // borders (temp)
+
+        vec3 cp = getChunkPos(p); // get ray chunk position
+
+        // distance to chunk border
+        float cd = distToBorder(p, rd, cp, float(chunkSize));
+        if (chunkIndexes[posToChunkIndex(p)] == -1) { // if in empty, skip
+            t+=cd+e;
+            //collect += 0.1;
+            continue;
+        }
+
+        // distance to surface
         float d = smoothDist(p);
 
+        // hit
         if (d < e) { 
             // coloring and stuff
             float falloff = float(i)/float(raySteps);
-            float shadow = max(1.0-dot(getNormal(p),vec3(-1.0)),0.3); // basic shading
+            float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
             vec4 color = smoothColor(p);
 
-            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),falloff*falloff));
+            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),falloff*falloff)+collect);
             return;
         }
-        
-        // distance to chunk border
-        float cd = distToBorder(p, rd, cp, float(chunkSize));
 
         t+=min(max(d,e),cd+e); // step ray
     }
-    imageStore(screen, fragCoord, vec4(0.0,0.4,1.0,1.0));
+    imageStore(screen, fragCoord, vec4(0.0,0.4,1.0,1.0)+collect);
 }

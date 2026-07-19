@@ -14,15 +14,16 @@ GLuint ScreenID; // screenshader
 GLuint MarcherID; // raymarcher
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
+GLuint CheckerID; // empty checker
 
 // textures
 GLuint screenTex; // screen
 
 // chunk data stuff
-const int chunkSize = 63; // chunk size in blocks
+const int chunkSize = 31; // chunk size in blocks
 const int dataSize = chunkSize+1; // need +1 for boundaries
 const int chunkProbes = dataSize*dataSize*dataSize;
-const int viewSize = 6; // world size in chunks, 24 max rn
+const int viewSize = 32; // world size in chunks, 24 max rn
 const int viewChunks = viewSize*viewSize*viewSize;
 const float full = (float)(dataSize*viewSize);
 
@@ -32,7 +33,7 @@ size_t ssbo0Size = sizeof(GLuint)*chunkProbes/4*viewChunks; // /4 for bitpacking
 GLuint ssbo1ID; // material data
 size_t ssbo1Size = sizeof(GLuint)*chunkProbes/8*viewChunks; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
-GLuint ssbo2ID; // chunk mapping data
+GLuint ssbo2ID; // chunk mapping data. Holds bitmask and IDs, in int array, where sign corresponds to empty, and value corresponds to index/ID of chunk.
 size_t ssbo2Size = sizeof(GLuint)*viewChunks;
 uint* ssbo2Data; // chunk mapping persistently mapped data pointer
 
@@ -54,14 +55,15 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {38,232,53};//{full/2.0,halfFull/2.0,halfFull/2.0};
+  {vec3 pos = {full/2.0,full/2.0,full/2.0};
   vec3 dir = {0.0,0.0,1.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
 
   // creates SSBOs
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
-  ssbo2Data = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
+  createSSBO(ssbo2ID, ssbo2Size, 2);
+  //ssbo2Data = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
 
   // loads shaders
   // raymarcher
@@ -76,13 +78,17 @@ int main() {
     ScreenID = linkShaders(vID, fID);
   }
 
-  // block update shader
+  // update shader
   shaderCompile(&UpdatesID, GL_COMPUTE_SHADER, "shaders/4.3.updates.comp");
   UpdatesID = linkComputeShader(UpdatesID);
 
-  // terrain shader
+  // terrain gen shader
   shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
   TerrainID = linkComputeShader(TerrainID);
+
+  // empty checker shader
+  shaderCompile(&CheckerID, GL_COMPUTE_SHADER, "shaders/4.3.checker.comp");
+  CheckerID = linkComputeShader(CheckerID);
   
   // updates settings to make sure everything is correct
   updateSettings();
@@ -137,7 +143,7 @@ int main() {
     // terrain updates
     if (player.mouseClick != 0) {
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
-        applyUpdate(target, player.mouseClick, 0, 6.0, 7);
+        applyUpdate(target, player.mouseClick, 1, 6.0, 7);
     }
 
     // screen
