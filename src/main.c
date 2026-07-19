@@ -23,7 +23,7 @@ GLuint screenTex; // screen
 const int chunkSize = 31; // chunk size in blocks
 const int dataSize = chunkSize+1; // need +1 for boundaries
 const int chunkProbes = dataSize*dataSize*dataSize;
-const int viewSize = 32; // world size in chunks, 24 max rn
+const int viewSize = 8; // world size in chunks, 24 max rn
 const int viewChunks = viewSize*viewSize*viewSize;
 const float full = (float)(dataSize*viewSize);
 
@@ -101,11 +101,11 @@ int main() {
   // generate terrain
   vec3 sp = {0.0,0.0,0.0};
   genSpawnChunks(sp);
+  //checkSpawnChunks(sp);
 
   // frame time
   float deltaTime = 0.0f;
   float lastTime = 0.0f;
-  vec3 p = {0.0,0.0,0.0};
 
   // render loop
   while (!glfwWindowShouldClose(window)) {
@@ -121,7 +121,7 @@ int main() {
     playerMouse(&player);
 
     // clamps player within one chunk.
-    {vec3 A = {0.0,0.0,0.0}; vec3 B = {full-viewSize,full-viewSize,full-viewSize};
+    {vec3 A = {0.0,0.0,0.0}; vec3 B = {full-viewSize-1.0,full-viewSize-1.0,full-viewSize-1.0};
     clampPlayer(&player, A, B);}
     //checkPlayer(&player);
 

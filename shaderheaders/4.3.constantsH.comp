@@ -1,6 +1,6 @@
 // common constants
 const uint chunkSize = 31u;
-const uint viewSize = 32u;
+const uint viewSize = 8u;
 
 const int raySteps = 256;
 const float renderDist = 512.0; // currently unused

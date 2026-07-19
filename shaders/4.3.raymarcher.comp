@@ -149,6 +149,7 @@ void main() {
         if (chunkIndexes[posToChunkIndex(p)] == -1) { // if in empty, skip
             t+=cd+e;
             //collect += 0.1;
+            //collect = min(collect, 0.5);
             continue;
         }
 

@@ -18,7 +18,7 @@ vec3 getChunkPos(vec3 p) {
 
 // takes chunk position and spits out index in prefix array, not sure if functional yet
 uint posToChunkIndex(vec3 p) {
-    uvec3 ucp = uvec3(getChunkPos(p)/chunkSize);
+    uvec3 ucp = uvec3(getChunkPos(floor(p)))/chunkSize;
     return ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
 }
 
