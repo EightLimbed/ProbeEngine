@@ -25,6 +25,8 @@ extern GLuint CheckerID;
 
 vec3 getChunkPos(vec3 p) {
     float cs = (float)chunkSize;
+    //vec3 print = multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
+    //printf("Chunk Pos: (%f,%f,%f)\n",print.x,print.y,print.z);
     return multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
 }
 
@@ -64,8 +66,9 @@ void genSpawnChunks(vec3 pos) {
     for (int y = 0; y < viewSize; y++)
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
-        generateChunk(multiply_f3xf(p, (float)chunkSize)); // generates chunk at position
-        checkChunk(multiply_f3xf(p, (float)chunkSize));
+        vec3 cPos = multiply_f3xf(p, (float)chunkSize);
+        generateChunk(cPos); // generates chunk at position
+        //checkChunk(cPos);
     }
 }
 

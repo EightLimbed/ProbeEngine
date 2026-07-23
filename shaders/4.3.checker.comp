@@ -19,17 +19,19 @@ layout(std430, binding = 2) buffer ChunkIndexes {
 //include shaderheaders/4.3.setgetH.comp
 
 // parameters
-uniform vec3 cPos = vec3(0); // position to check chunk at
+uniform vec3 cPos; // position to check chunk at
 
-// Checker can only set to full
+// checker can only set to full
 // always set the chunk to empty when generating or updating, and have the checker verify that.
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
     vec3 p = vec3(pp)+cPos; // global position
     uvec3 lp = getLocalPos(p);
 
+    uvec3 mini = uvec3(getChunkPos(p));
+    uvec3 maxi = mini+chunkSize;
     float d = getProbe(lp); // gets distance of probe
     if (d<=0.0) {
-        chunkIndexes[posToChunkIndex(p)] = 1;
+        chunkIndexes[posToChunkIndex(p)] = 1; // sets chunk to full
     }
 }

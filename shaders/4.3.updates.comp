@@ -42,7 +42,7 @@ void main() {
     uvec3 pp = gl_GlobalInvocationID; // local probe position
 
     vec3 p = pp+cPos;
-    chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
+    //chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
     uvec3 lp = getLocalPos(p);
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance

@@ -101,7 +101,7 @@ int main() {
   // generate terrain
   vec3 sp = {0.0,0.0,0.0};
   genSpawnChunks(sp);
-  //checkSpawnChunks(sp);
+  checkSpawnChunks(sp);
 
   // frame time
   float deltaTime = 0.0f;
@@ -144,6 +144,7 @@ int main() {
     if (player.mouseClick != 0) {
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
         applyUpdate(target, player.mouseClick, 1, 6.0, 7);
+        //checkSpawnChunks(sp);
     }
 
     // screen
