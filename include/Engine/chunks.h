@@ -68,7 +68,7 @@ void genSpawnChunks(vec3 pos) {
         vec3 p = {(float)x,(float)y,(float)z};
         vec3 cPos = multiply_f3xf(p, (float)chunkSize);
         generateChunk(cPos); // generates chunk at position
-        //checkChunk(cPos);
+        checkChunk(cPos);
     }
 }
 

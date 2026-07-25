@@ -23,7 +23,7 @@ GLuint screenTex; // screen
 const int chunkSize = 31; // chunk size in blocks
 const int dataSize = chunkSize+1; // need +1 for boundaries
 const int chunkProbes = dataSize*dataSize*dataSize;
-const int viewSize = 8; // world size in chunks, 24 max rn
+const int viewSize = 16; // world size in chunks, 24 max rn
 const int viewChunks = viewSize*viewSize*viewSize;
 const float full = (float)(dataSize*viewSize);
 
@@ -101,7 +101,7 @@ int main() {
   // generate terrain
   vec3 sp = {0.0,0.0,0.0};
   genSpawnChunks(sp);
-  checkSpawnChunks(sp);
+  //checkSpawnChunks(sp);
 
   // frame time
   float deltaTime = 0.0f;

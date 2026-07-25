@@ -13,13 +13,14 @@ uvec3 getLocalPos(vec3 p) {
 
 // not to be used for indexing, just clamps position physically to chunk border
 vec3 getChunkPos(vec3 p) {
+
     return floor(p / chunkSize) * chunkSize;
 }
 
-// takes chunk position and spits out index in prefix array, not sure if functional yet
+// takes chunk position and spits out index in prefix array
 uint posToChunkIndex(vec3 p) {
-    uvec3 ucp = uvec3(getChunkPos(p))/chunkSize;
-    return ucp.x+viewSize*(ucp.y+viewSize*ucp.z)+1;
+    uvec3 ucp = uvec3(getChunkPos(p))/(chunkSize);
+    return ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
 }
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.

@@ -30,8 +30,8 @@ uniform float iTime;
 //include shaderheaders/4.3.setgetH.comp
 
 float getProbeWarped(uvec3 lp) {
-    //float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
-    return getProbe(lp);//+warp;
+    float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
+    return getProbe(lp)+warp;
 }
 
 // interpolates between surrounding precomputed probe distances.
@@ -148,8 +148,8 @@ void main() {
         float cd = distToBorder(p, rd, cp, float(chunkSize));
         if (chunkIndexes[posToChunkIndex(p)] == -1) { // if in empty, skip
             t+=cd+e;
-            collect += 0.1;
-            collect = min(collect, 0.5);
+            //collect += 0.1;
+            //collect = min(collect, 0.5);
             continue;
         }
 

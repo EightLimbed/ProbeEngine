@@ -25,6 +25,8 @@ uniform vec3 cPos; // position to check chunk at
 // always set the chunk to empty when generating or updating, and have the checker verify that.
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
+    if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
+
     vec3 p = vec3(pp)+cPos; // global position
     uvec3 lp = getLocalPos(p);
 

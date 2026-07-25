@@ -40,9 +40,10 @@ float getEdit(vec3 p, uint i, float s) {
 
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local probe position
+    if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
 
     vec3 p = pp+cPos;
-    //chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
+    chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
     uvec3 lp = getLocalPos(p);
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance

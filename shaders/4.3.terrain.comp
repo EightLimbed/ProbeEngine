@@ -68,6 +68,7 @@ uint material(vec3 p) {
 
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
+    if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
     vec3 p = vec3(pp+cPos); // global position
     chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
 
