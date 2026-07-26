@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIndexes {
-    int chunkIndexes[];
+layout(std430, binding = 2) buffer ChunkIDs {
+    int chunkIDs[];
 };
 
 //include shaderheaders/4.3.constantsH.comp
@@ -23,6 +23,7 @@ uniform vec3 cPos; // position to check chunk at
 
 // checker can only set to full
 // always set the chunk to empty when generating or updating, and have the checker verify that.
+// positive index is full, negative is empty
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
@@ -33,7 +34,6 @@ void main() {
     uvec3 mini = uvec3(getChunkPos(p));
     uvec3 maxi = mini+chunkSize;
     float d = getProbe(lp); // gets distance of probe
-    if (d<=0.0) {
-        chunkIndexes[posToChunkIndex(p)] = 1; // sets chunk to full
-    }
+    
+    if (d<=0.0) chunkIDs[posToChunkIndex(p)] = abs(chunkIDs[posToChunkIndex(p)]); // set to full
 }

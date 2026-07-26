@@ -6,6 +6,11 @@ typedef struct {
   float x,y,z;
 } vec3;
 
+typedef struct {
+  uint x,y,z;
+} uvec3;
+
+
 vec3 add_f3(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.x+b.x;
@@ -35,6 +40,14 @@ vec3 floor_f3(vec3 a) {
   c.x = floor(a.x);
   c.y = floor(a.y);
   c.z = floor(a.z);
+  return c;
+}
+
+uvec3 to_uvec3(vec3 a) {
+  uvec3 c;
+  c.x = (uint)a.x;
+  c.y = (uint)a.y;
+  c.z = (uint)a.z;
   return c;
 }
 

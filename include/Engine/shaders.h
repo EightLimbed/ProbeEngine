@@ -238,7 +238,7 @@ void shaderSetVec3(GLuint ID, const char* name, vec3 value) {
 void createSSBO(GLuint ID, size_t size, int index) {
   glGenBuffers(1, &ID);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, size, NULL, GL_DYNAMIC_DRAW); // could use glBufferStorage
+  glBufferData(GL_SHADER_STORAGE_BUFFER, size, NULL, GL_DYNAMIC_DRAW); // could use glBufferStorage, data initializes all 0s
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ID);
 }
 
@@ -253,10 +253,10 @@ void* createAndPersistentlyMapSSBO(GLuint ID, size_t size, int index) {
     // allocate memory
     glBufferStorage(GL_SHADER_STORAGE_BUFFER, size, NULL, storageFlags);
 
+    // bind buffer to index
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ID);
+
     // retrieve cpu pointer
     GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
     return glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, size, mapFlags);
-
-    // bind buffer to index
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ID);
 }

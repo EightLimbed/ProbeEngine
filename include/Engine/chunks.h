@@ -30,6 +30,21 @@ vec3 getChunkPos(vec3 p) {
     return multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
 }
 
+// takes chunk position and spits out index in prefix array
+uint posToChunkIndex(vec3 p) {
+    float cs = (float)chunkSize;
+    uvec3 ucp = to_uvec3(floor_f3(multiply_f3xf(p, 1.0f/cs)));
+    //printf("Unsigned Position: (%i, %i, %i)\n",ucp.x,ucp.y,ucp.z);
+    return ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
+}
+
+// takes position and spits out index in prefix array
+uint posToIndex(vec3 p) {
+    uint full = (chunkSize*viewSize);
+    uvec3 lp = to_uvec3(floor_f3(p));
+    return lp.x+full*(lp.y+full*lp.z);
+}
+
 // generates chunk at position
 void generateChunk(vec3 pos) {
     glUseProgram(TerrainID);
@@ -67,6 +82,7 @@ void genSpawnChunks(vec3 pos) {
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
         vec3 cPos = multiply_f3xf(p, (float)chunkSize);
+        ssbo2Data[posToChunkIndex(cPos)] = posToIndex(cPos); // sets index data
         generateChunk(cPos); // generates chunk at position
         checkChunk(cPos);
     }

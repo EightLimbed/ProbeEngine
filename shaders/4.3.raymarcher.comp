@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIndexes {
-    int chunkIndexes[];
+layout(std430, binding = 2) buffer ChunkIDs {
+    int chunkIDs[];
 };
 
 // player data
@@ -146,7 +146,7 @@ void main() {
 
         // distance to chunk border
         float cd = distToBorder(p, rd, cp, float(chunkSize));
-        if (chunkIndexes[posToChunkIndex(p)] == -1) { // if in empty, skip
+        if (sign(chunkIDs[posToChunkIndex(p)]) == -1) { // if in empty, skip
             t+=cd+e;
             //collect += 0.1;
             //collect = min(collect, 0.5);

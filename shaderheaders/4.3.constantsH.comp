@@ -2,7 +2,9 @@
 const uint chunkSize = 31u;
 const uint viewSize = 16u;
 
-const int raySteps = 256;
+const uint full = (chunkSize*viewSize);
+
+const int raySteps = 160;
 const float renderDist = 512.0; // currently unused
 const float e = 0.01; // max precision of 8 bit float
 const float dMin = -sqrt(2.0); // important to allow negative sdf distance data encoding.

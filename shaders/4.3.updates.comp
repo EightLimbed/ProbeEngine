@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIndexes {
-    int chunkIndexes[];
+layout(std430, binding = 2) buffer ChunkIDs {
+    int chunkIDs[];
 };
 
 uniform vec3 uPos; // position of edit
@@ -43,7 +43,7 @@ void main() {
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
 
     vec3 p = pp+cPos;
-    chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
+    chunkIDs[posToChunkIndex(p)] = -abs(chunkIDs[posToChunkIndex(p)]); // assume empty for checker (important)
     uvec3 lp = getLocalPos(p);
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance

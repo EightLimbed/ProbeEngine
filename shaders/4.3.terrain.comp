@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIndexes {
-    int chunkIndexes[];
+layout(std430, binding = 2) buffer ChunkIDs {
+    int chunkIDs[];
 };
 
 //include shaderheaders/4.3.constantsH.comp
@@ -70,9 +70,11 @@ void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
     vec3 p = vec3(pp+cPos); // global position
-    chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
 
-    float d = terrain(p, 0.04, 9, 2560.0, 1280.0);
+    chunkIDs[posToChunkIndex(p)] = -abs(chunkIDs[posToChunkIndex(p)]); // assume empty for checker (important)
+    //chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
+
+    float d = terrain(p, 0.04, 8, 2560.0, 1280.0);
     uint mat = material(p);
 
     uvec3 lp = getLocalPos(p); // this will handle shuffling. Updates from chunk manager will deal with this. Make sure chunk manager updates are done before terrain gen.

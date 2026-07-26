@@ -62,8 +62,8 @@ int main() {
   // creates SSBOs
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
-  createSSBO(ssbo2ID, ssbo2Size, 2);
-  //ssbo2Data = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
+  //createSSBO(ssbo2ID, ssbo2Size, 2);
+  ssbo2Data = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
 
   // loads shaders
   // raymarcher
