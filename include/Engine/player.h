@@ -5,8 +5,8 @@
 
 typedef struct {
   // physical
-  vec3 pos;
-  vec3 dir;
+  vec3 pos; // global position
+  vec3 dir; // facing direction
 
   // stats
   float speed;

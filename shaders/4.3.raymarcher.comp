@@ -16,6 +16,7 @@ layout(std430, binding = 2) buffer ChunkIDs {
 
 // player data
 uniform vec3 pPos = vec3(0.0,0.0,-1.0);
+uniform vec3 worldPos;
 uniform vec3 pDir = vec3(0.0,0.0,1.0);
 
 // screen data
@@ -30,16 +31,14 @@ uniform float iTime;
 //include shaderheaders/4.3.setgetH.comp
 
 float getProbeWarped(uvec3 lp) {
-    float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
-    return getProbe(lp)+warp;
+    //float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
+    return getProbe(lp);//+warp;
 }
 
 // interpolates between surrounding precomputed probe distances.
-float smoothDist(vec3 p) {
-    uvec3 lp = getLocalPos(p);
-    vec3 f = fract(p);
+float smoothDist(uvec3 lp, vec3 f) {
 
-    uvec3 mini = uvec3(getChunkPos(p));
+    uvec3 mini = lp-lp%chunkSize;
     uvec3 maxi = mini+chunkSize;
     float d000 = getProbeWarped(clamp(lp + uvec3(0,0,0),mini,maxi));
     float d100 = getProbeWarped(clamp(lp + uvec3(1,0,0),mini,maxi));
@@ -66,12 +65,10 @@ float smoothDist(vec3 p) {
     return d; // adjust for negative distances
 }
 
-vec4 smoothColor(vec3 p) {
-    uvec3 lp = getLocalPos(p);
-    vec3 f = fract(p);
+vec4 smoothColor(uvec3 lp, vec3 f) {
     
     // need bounds checks, but this should work otherwise for now
-    uvec3 mini = uvec3(getChunkPos(p));
+    uvec3 mini = lp-lp%chunkSize;
     uvec3 maxi = mini+chunkSize;
     vec4 c000 = colors[getMaterial(clamp(lp + uvec3(0,0,0),mini,maxi))];
     vec4 c100 = colors[getMaterial(clamp(lp + uvec3(1,0,0),mini,maxi))];
@@ -101,11 +98,13 @@ vec4 smoothColor(vec3 p) {
 // Paulo Falcao technique
 vec3 getNormal(vec3 p) {
     const float h = e*20.0; // higher coefficient makes things look smoother
-    const vec2 k = vec2(1,-1);
-    return normalize(k.xyy*smoothDist(p + k.xyy*h) + 
-                     k.yyx*smoothDist(p + k.yyx*h) + 
-                     k.yxy*smoothDist(p + k.yxy*h) + 
-                     k.xxx*smoothDist(p + k.xxx*h));
+    const vec2 k = vec2(1.0,-1.0);
+    vec3 ups[4] = {p+k.xyy*h, p+k.yyx*h, p+k.yxy*h, p+k.xxx*h};
+    
+    return normalize(k.xyy*smoothDist(getLocalPos(ups[0], worldPos), fract(ups[0])) + 
+                     k.yyx*smoothDist(getLocalPos(ups[1], worldPos), fract(ups[1])) + 
+                     k.yxy*smoothDist(getLocalPos(ups[2], worldPos), fract(ups[2])) + 
+                     k.xxx*smoothDist(getLocalPos(ups[3], worldPos), fract(ups[3])));
 }
 
 // camera shizzle
@@ -118,9 +117,9 @@ vec3 getRayDir(vec2 fragCoord, vec2 res, vec3 lookAt, float zoom) {
 }
 
 // returns distance to chunk edge
-float distToBorder(vec3 p, vec3 rd, vec3 cp, float l) {
-    vec3 border = mix(cp, cp + l, step(0.0, rd));
-    vec3 t = (border - p) / rd;
+float distToBorder(vec3 pp, vec3 rd, vec3 l) {
+    vec3 border = mix(vec3(0.0), l, step(0.0, rd));
+    vec3 t = (border - pp) / rd;
     return min(min(t.x, t.y), t.z);
 }
 
@@ -133,37 +132,38 @@ void main() {
 
     // marching
     float t = 0.0;
-    vec3 ro = pPos;
+    vec3 ro = pPos-worldPos+center;
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
-    vec3 p = ro;
     float collect = 0.0;
     for (int i = 0; i < raySteps; i++) {
 
-        p = ro+rd*t; // calculate ray position
+        vec3 p = ro+rd*t; // calculate ray position
+        uvec3 lp = getLocalPos(p, worldPos);
+        vec3 f = fract(p);
         if (clamp(p, vec3(0.0), vec3(chunkSize*viewSize)) != p) break; // borders (temp)
 
-        vec3 cp = getChunkPos(p); // get ray chunk position
-
         // distance to chunk border
-        float cd = distToBorder(p, rd, cp, float(chunkSize));
-        if (sign(chunkIDs[posToChunkIndex(p)]) == -1) { // if in empty, skip
+        float cd = distToBorder(mod(p,float(chunkSize)), rd, vec3(chunkSize));
+        if (sign(chunkIDs[getChunkOccupancy(lp)]) == -1) { // if in empty, skip
             t+=cd+e;
-            //collect += 0.1;
-            //collect = min(collect, 0.5);
             continue;
         }
 
         // distance to surface
-        float d = smoothDist(p);
+        float d = smoothDist(lp, f);
+        if (cd<d) {
+            collect += 0.1;
+            collect = min(collect, 0.5);
+        }
 
         // hit
         if (d < e) { 
             // coloring and stuff
-            float falloff = float(i)/float(raySteps);
+            float falloff = min(max(t/float(full)*2.0,float(i)/float(raySteps)),1.0);
             float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
-            vec4 color = smoothColor(p);
+            vec4 color = smoothColor(lp, f);
 
-            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),falloff*falloff)+collect);
+            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),pow(falloff, 10.0))+collect);
             return;
         }
 

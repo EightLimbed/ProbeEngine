@@ -23,9 +23,11 @@ GLuint screenTex; // screen
 const int chunkSize = 31; // chunk size in blocks
 const int dataSize = chunkSize+1; // need +1 for boundaries
 const int chunkProbes = dataSize*dataSize*dataSize;
-const int viewSize = 16; // world size in chunks, 24 max rn
+const int viewSize = 12; // world size in chunks, 24 max rn
 const int viewChunks = viewSize*viewSize*viewSize;
 const float full = (float)(dataSize*viewSize);
+const float center = (float)viewSize/2.0*(float)chunkSize;
+vec3 worldPos; // position of world, for local positioning
 
 GLuint ssbo0ID; // probe data
 size_t ssbo0Size = sizeof(GLuint)*chunkProbes/4*viewChunks; // /4 for bitpacking, 8 bit floats
@@ -57,7 +59,8 @@ int main() {
   player player;
   {vec3 pos = {full/2.0,full/2.0,full/2.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
+  initializePlayer(&player, dir, dir, 100.0, 0.005, window);}
+  worldPos = getChunkPos(player.pos); // update world position
 
   // creates SSBOs
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
@@ -99,8 +102,7 @@ int main() {
   glBindVertexArray(vao);
 
   // generate terrain
-  vec3 sp = {0.0,0.0,0.0};
-  genSpawnChunks(sp);
+  genSpawnChunks();
   //checkSpawnChunks(sp);
 
   // frame time
@@ -119,11 +121,7 @@ int main() {
     // handles player inputs
     playerInputs(&player,deltaTime);
     playerMouse(&player);
-
-    // clamps player within one chunk.
-    {vec3 A = {0.0,0.0,0.0}; vec3 B = {full-viewSize-1.0,full-viewSize-1.0,full-viewSize-1.0};
-    clampPlayer(&player, A, B);}
-    //checkPlayer(&player);
+    worldPos = getChunkPos(player.pos); // update world position
 
     // process other input
     processInput(window);
@@ -133,6 +131,7 @@ int main() {
 
     // raymarch
     shaderSetVec3(MarcherID, "pPos", player.pos); // sets player stuff
+    shaderSetVec3(MarcherID, "worldPos", worldPos); // sets player stuff
     shaderSetVec3(MarcherID, "pDir", player.dir);
     shaderSetFloat(MarcherID, "iTime", currentTime);
     
@@ -143,7 +142,7 @@ int main() {
     // terrain updates
     if (player.mouseClick != 0) {
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
-        applyUpdate(target, player.mouseClick, 1, 6.0, 7);
+        applyUpdate(target, player.mouseClick, 1, 15.0, 7);
         //checkSpawnChunks(sp);
     }
 

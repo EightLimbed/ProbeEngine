@@ -8,25 +8,19 @@ vec3 getChunkPos(vec3 p) {
 }
 
 // takes chunk position and spits out index in prefix array
-// when checking signs for occupancy, this is in strucural, not actual order, could maybe pass lp into this, or recalculate all occupancy whenever chunks shift, not sure.
-uint posToChunkIndex(vec3 p) {
-    uvec3 ucp = uvec3(floor(p / chunkSize));
-    return ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
-}
 
 // will handle chunk shuffling, ie getting chunk pos, and matching to actual position, before updating, as well as matching to chunk position
 // also need to handle global position offset, ie: chunks player has travelled in each direction.
-uvec3 getLocalPos(vec3 p) {
-    p = clamp(p, 0.0, float(full-1)); // stop wrapping at 0 chunks
-    uint uPosID = abs(chunkIDs[posToChunkIndex(p)]); // get id for updated position
-    uvec3 uPos; // get pos from id
-    uPos.x = uPosID % full;
-    uPos.y = (uPosID / full) % full;
-    uPos.z = uPosID / (full * full);
+uvec3 getLocalPos(vec3 p, vec3 worldPos) {
+    //p = clamp(p, 0.0, float(full-1)); // stop wrapping at 0 chunks
+    uvec3 lp = (uvec3(mod(floor(p)+worldPos, full)));
+    // wrap lp 
+    return lp;
+}
 
-    vec3 pp = p-getChunkPos(p); // get local position within chunk
-    uvec3 lp = uPos+uvec3(floor(pp)); // add updated chunk position
-    return lp;//uvec3(floor(p));
+uint getChunkOccupancy(uvec3 lp) {
+    uvec3 ucp = lp/chunkSize;
+    return ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
 }
 
 // takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
@@ -66,8 +60,8 @@ void setMaterial(uvec3 lp, uint m) {
 }
 
 // gets probe with 8 bit packing
-float getProbe(uvec3 p) {
-    uint index = posToIndex(p);
+float getProbe(uvec3 lp) {
+    uint index = posToIndex(lp);
     uint uintIndex = index >> 2u;
     uint subIndex = index & 3u;
 
@@ -77,8 +71,8 @@ float getProbe(uvec3 p) {
 }
 
 // gets material with 4 bit packing
-uint getMaterial(uvec3 p) {
-    uint index = posToIndex(p);
+uint getMaterial(uvec3 lp) {
+    uint index = posToIndex(lp);
     uint uintIndex = index >> 3u;
     uint bitShift = (index & 7u) * 4u; // shift amount
 

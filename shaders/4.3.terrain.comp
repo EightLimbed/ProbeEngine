@@ -19,7 +19,8 @@ layout(std430, binding = 2) buffer ChunkIDs {
 //include shaderheaders/4.3.setgetH.comp
 
 // parameters
-uniform vec3 cPos = vec3(0); // position to generate chunk at
+uniform vec3 worldPos; // position of world, for local positioning
+uniform vec3 cPos; // global position to generate chunk at
 
 float smin(float a, float b, float k) {
     float h = max(k-abs(a-b),0.0);
@@ -71,13 +72,11 @@ void main() {
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
     vec3 p = vec3(pp+cPos); // global position
 
-    chunkIDs[posToChunkIndex(p)] = -abs(chunkIDs[posToChunkIndex(p)]); // assume empty for checker (important)
-    //chunkIndexes[posToChunkIndex(p)] = -1; // assume empty for checker (important)
-
     float d = terrain(p, 0.04, 8, 2560.0, 1280.0);
     uint mat = material(p);
 
-    uvec3 lp = getLocalPos(p); // this will handle shuffling. Updates from chunk manager will deal with this. Make sure chunk manager updates are done before terrain gen.
+    uvec3 lp = getLocalPos(p, worldPos); // this will handle shuffling. Updates from chunk manager will deal with this. Make sure chunk manager updates are done before terrain gen.
+    chunkIDs[getChunkOccupancy(lp)] = -1; // assume empty for checker (important)
 
     setMaterial(lp,mat);
     setProbe(lp,d);

@@ -14,6 +14,7 @@ layout(std430, binding = 2) buffer ChunkIDs {
     int chunkIDs[];
 };
 
+uniform vec3 worldPos; // position of world, for local positioning
 uniform vec3 uPos; // position of edit
 uniform int uClick; // -1:place or 1:break
 uniform float uSize; // size of edit 
@@ -24,7 +25,6 @@ uniform vec3 cPos; // offset for surrounding chunks to be updated as well.
 //include shaderheaders/4.3.constantsH.comp
 //include shaderheaders/4.3.functionsH.comp
 //include shaderheaders/4.3.setgetH.comp
-
 
 // gets edit function at position and size
 float getEdit(vec3 p, uint i, float s) {
@@ -43,8 +43,9 @@ void main() {
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
 
     vec3 p = pp+cPos;
-    chunkIDs[posToChunkIndex(p)] = -abs(chunkIDs[posToChunkIndex(p)]); // assume empty for checker (important)
-    uvec3 lp = getLocalPos(p);
+    uvec3 lp = getLocalPos(p-center, worldPos);
+
+    chunkIDs[getChunkOccupancy(lp)] = -1; // assume empty for checker (important)
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance
     float od = getProbe(lp); // gets current distance
