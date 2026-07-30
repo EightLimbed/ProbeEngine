@@ -1,4 +1,5 @@
 // main file, handle uniform setting, object+player handling
+#include "Engine/types.h"
 #include <Engine/load.h>
 #include <Engine/player.h>
 #include <GLFW/glfw3.h>
@@ -23,10 +24,10 @@ GLuint screenTex; // screen
 const int chunkSize = 31; // chunk size in blocks
 const int dataSize = chunkSize+1; // need +1 for boundaries
 const int chunkProbes = dataSize*dataSize*dataSize;
-const int viewSize = 12; // world size in chunks, 24 max rn
+const int viewSize = 24; // world size in chunks, 24 max rn
 const int viewChunks = viewSize*viewSize*viewSize;
 const float full = (float)(dataSize*viewSize);
-const float center = (float)viewSize/2.0*(float)chunkSize;
+const float center = (float)(viewSize)/2.0*(float)chunkSize; // integer devision rounds down to nearest chunk
 vec3 worldPos; // position of world, for local positioning
 
 GLuint ssbo0ID; // probe data
@@ -57,9 +58,9 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {full/2.0,full/2.0,full/2.0};
+  {vec3 pos = {0.0,0.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, dir, dir, 100.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
 
   // creates SSBOs
@@ -109,6 +110,9 @@ int main() {
   float deltaTime = 0.0f;
   float lastTime = 0.0f;
 
+  // old world pos for shifting
+  vec3 owp = worldPos;
+
   // render loop
   while (!glfwWindowShouldClose(window)) {
 
@@ -140,11 +144,19 @@ int main() {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
     // terrain updates
-    if (player.mouseClick != 0) {
-        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
-        applyUpdate(target, player.mouseClick, 1, 15.0, 7);
-        //checkSpawnChunks(sp);
+    if (player.mousePress != 0) {
+        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
+        applyUpdate(target, player.mousePress, 1, 6.0, 7);
     }
+
+    if (!equal_f3(worldPos, owp)) {
+        ivec3 shift = {(int)(worldPos.x-owp.x)/chunkSize,
+                       (int)(worldPos.y-owp.y)/chunkSize,
+                       (int)(worldPos.z-owp.z)/chunkSize};
+        //printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
+        shiftChunks(shift);
+    }
+    owp = worldPos;
 
     // screen
     glUseProgram(ScreenID);

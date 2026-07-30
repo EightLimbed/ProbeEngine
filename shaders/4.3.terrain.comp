@@ -64,18 +64,18 @@ float terrain(vec3 p, float a, uint layers, float s, float l) {
 }
 
 uint material(vec3 p) {
-    return uint(p.y)%6u;
+    return uint(abs(p.y))%6u;
 }
 
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
-    vec3 p = vec3(pp+cPos); // global position
+    vec3 p = vec3(pp)+cPos+worldPos; // global position
 
     float d = terrain(p, 0.04, 8, 2560.0, 1280.0);
     uint mat = material(p);
 
-    uvec3 lp = getLocalPos(p, worldPos); // this will handle shuffling. Updates from chunk manager will deal with this. Make sure chunk manager updates are done before terrain gen.
+    uvec3 lp = getLocalPos(p-worldPos, worldPos); // this will handle shuffling. Updates from chunk manager will deal with this. Make sure chunk manager updates are done before terrain gen.
     chunkIDs[getChunkOccupancy(lp)] = -1; // assume empty for checker (important)
 
     setMaterial(lp,mat);

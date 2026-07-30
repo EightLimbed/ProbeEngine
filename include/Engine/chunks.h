@@ -39,7 +39,7 @@ vec3 getChunkPosCentered(vec3 p) {
     vec3 ct = {center,center,center};
     //vec3 print = multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
     //printf("Chunk Pos: (%f,%f,%f)\n",print.x,print.y,print.z);
-    return add_f3(cp, ct);
+    return subtract_f3(cp, ct);
 }
 
 // generates chunk at position
@@ -76,20 +76,66 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
 
 // need function for the first pass upon loading where you assign a index to every chunk position (will do grid with posToIndex function)
 void genSpawnChunks() {
-    // pos currently unused
     for (int x = 0; x < viewSize; x++) 
     for (int y = 0; y < viewSize; y++)
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
         vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos);
         generateChunk(cPos); // generates chunk at position
-        checkChunk(getChunkPosCentered(cPos)); // chunks are not already being generated around center, center check
+        checkChunk(cPos); // chunks are not already being generated around center, center checks
+    }
+}
+
+void checkSpawnChunks() {
+    for (int x = 0; x < viewSize; x++) 
+    for (int y = 0; y < viewSize; y++)
+    for (int z = 0; z < viewSize; z++) {
+        vec3 p = {(float)x,(float)y,(float)z};
+        vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos);
+        checkChunk(cPos);
     }
 }
 
 // need function to update chunk indexes when player moves. Will set indexes moved out of to new chunks indexes.
+// positioning wrong, going in right place in memory tho
 void shiftChunks(ivec3 shift) {
-    // gen new chunk terrain
+    // shift x
+    if (abs(shift.x) > 0) {
+        for (int y = 0; y < viewSize; y++)
+        for (int z = 0; z < viewSize; z++) {
+            ivec3 ip = {stepi(shift.x, 0)*(viewSize), y, z};
+            vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
+            vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
+
+            generateChunk(uPos);
+            checkChunk(add_f3(uPos, worldPos)); // add worldPos for wrapping
+        }
+    }
+    // shift z
+    if (abs(shift.z) > 0) {
+        for (int x = 0; x < viewSize; x++)
+        for (int y = 0; y < viewSize; y++) {
+            ivec3 ip = {x, y, stepi(shift.z, 0)*(viewSize)};
+            vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
+            vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
+
+            generateChunk(uPos);
+            checkChunk(add_f3(uPos, worldPos)); 
+        }
+    }
+    // shift y
+    if (abs(shift.y) > 0) {
+        for (int x = 0; x < viewSize; x++)
+        for (int z = 0; z < viewSize; z++) {
+            ivec3 ip = {x, stepi(shift.y, 0)*(viewSize), z};
+            vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
+            vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
+
+            generateChunk(uPos);
+            checkChunk(add_f3(uPos, worldPos));
+        }
+    }
+    //checkSpawnChunks();
 
 
     // apply edits saved
@@ -103,6 +149,6 @@ void applyUpdate(vec3 target, int click, uint type, float size, uint material) {
         vec3 offset = {(float)x,(float)y,(float)z};
         vec3 cPos = add_f3(getChunkPos(target),multiply_f3xf(offset, (float)chunkSize));
         updateChunk(target, cPos, click, type, size, material);
-        checkChunk(cPos);
+        checkChunk(getChunkPosCentered(cPos)); // chunks are being updated around center, center checks
     }
 }

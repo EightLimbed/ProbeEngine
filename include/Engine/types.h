@@ -22,6 +22,14 @@ vec3 add_f3(vec3 a, vec3 b) {
   return c;
 }
 
+vec3 subtract_f3(vec3 a, vec3 b) {
+  vec3 c;
+  c.x = a.x-b.x;
+  c.y = a.y-b.y;
+  c.z = a.z-b.z;
+  return c;
+}
+
 vec3 multiply_f3xf3(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.x*b.x;
@@ -46,11 +54,35 @@ vec3 floor_f3(vec3 a) {
   return c;
 }
 
+vec3 abs_f3(vec3 a) {
+  vec3 c;
+  c.x = fabsf(a.x);
+  c.y = fabsf(a.y);
+  c.z = fabsf(a.z);
+  return c;
+}
+
+int equal_f3(vec3 a, vec3 b) {
+  int equal = 1;
+  if (a.x != b.x) equal = 0;
+  if (a.y != b.y) equal = 0;
+  if (a.z != b.z) equal = 0;
+  return equal;
+}
+
 uvec3 to_uvec3(vec3 a) {
   uvec3 c;
   c.x = (uint)a.x;
   c.y = (uint)a.y;
   c.z = (uint)a.z;
+  return c;
+}
+
+vec3 to_vec3(ivec3 a) {
+  vec3 c;
+  c.x = (float)a.x;
+  c.y = (float)a.y;
+  c.z = (float)a.z;
   return c;
 }
 
@@ -69,4 +101,16 @@ vec3 normalize(vec3 a) {
   c.y = a.y/len;
   c.z = a.z/len;
   return c;
+}
+
+int mini(int a, int b) {
+  return (a<b) ? a : b;
+}
+
+int maxi(int a, int b) {
+  return (a>b) ? a : b;
+}
+
+int stepi(int a, int b) {
+  return (a<=b) ? 0 : 1;
 }

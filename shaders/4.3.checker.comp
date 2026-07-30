@@ -29,10 +29,11 @@ void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
 
-    vec3 p = vec3(pp)+cPos-center; // global position
+    vec3 p = vec3(pp)+cPos; // global position
     uvec3 lp = getLocalPos(p, worldPos);
 
     float d = getProbe(lp); // gets distance of probe
     
     if (d<=0.0) chunkIDs[getChunkOccupancy(lp)] = 1; // set to full
+
 }

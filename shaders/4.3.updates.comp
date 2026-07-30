@@ -43,7 +43,7 @@ void main() {
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
 
     vec3 p = pp+cPos;
-    uvec3 lp = getLocalPos(p-center, worldPos);
+    uvec3 lp = getLocalPos(p-center, worldPos); // not centered in dispatch, need to center here for local stuff
 
     chunkIDs[getChunkOccupancy(lp)] = -1; // assume empty for checker (important)
 

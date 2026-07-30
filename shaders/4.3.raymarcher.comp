@@ -38,6 +38,7 @@ float getProbeWarped(uvec3 lp) {
 // interpolates between surrounding precomputed probe distances.
 float smoothDist(uvec3 lp, vec3 f) {
 
+    // use get local pos so it loops properly
     uvec3 mini = lp-lp%chunkSize;
     uvec3 maxi = mini+chunkSize;
     float d000 = getProbeWarped(clamp(lp + uvec3(0,0,0),mini,maxi));
@@ -159,11 +160,11 @@ void main() {
         // hit
         if (d < e) { 
             // coloring and stuff
-            float falloff = min(max(t/float(full)*2.0,float(i)/float(raySteps)),1.0);
+            float falloff = min(max(t/float(full)*2.1,float(i)/float(raySteps)),1.0);
             float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
             vec4 color = smoothColor(lp, f);
 
-            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),pow(falloff, 10.0))+collect);
+            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),pow(falloff, 18.0))+collect);
             return;
         }
 
