@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIDs {
-    int chunkIDs[];
+layout(std430, binding = 2) buffer OccupancyData {
+    uint occupancyData[];
 };
 
 //include shaderheaders/4.3.constantsH.comp
@@ -34,6 +34,6 @@ void main() {
 
     float d = getProbe(lp); // gets distance of probe
     
-    if (d<=0.0) chunkIDs[getChunkOccupancy(lp)] = 1; // set to full
+    if (d<=0.0) setChunkOccupancy(lp, 1); // set to full
 
 }

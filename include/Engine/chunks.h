@@ -15,8 +15,8 @@ extern GLuint ssbo2ID; // chunk mapping data
 extern size_t ssbo2Size;
 extern vec3 worldPos; // position of world, for local positioning
 
-// pointer to chunk buffer data
-extern uint* ssbo2Data;
+// pointer to surface data
+extern uint* surfaceData;
 
 // terrain generator
 extern GLuint TerrainID;
@@ -82,16 +82,6 @@ void genSpawnChunks() {
         vec3 p = {(float)x,(float)y,(float)z};
         vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos);
         generateChunk(cPos); // generates chunk at position
-        checkChunk(cPos); // chunks are not already being generated around center, center checks
-    }
-}
-
-void checkSpawnChunks() {
-    for (int x = 0; x < viewSize; x++) 
-    for (int y = 0; y < viewSize; y++)
-    for (int z = 0; z < viewSize; z++) {
-        vec3 p = {(float)x,(float)y,(float)z};
-        vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos);
         checkChunk(cPos);
     }
 }
@@ -103,36 +93,35 @@ void shiftChunks(ivec3 shift) {
     if (abs(shift.x) > 0) {
         for (int y = 0; y < viewSize; y++)
         for (int z = 0; z < viewSize; z++) {
-            ivec3 ip = {stepi(shift.x, 0)*(viewSize), y, z};
+            ivec3 ip = {(shift.x>0) ? shift.x*viewSize-1 : 0, y, z}; // need -1, likely because shifting or something idk
             vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
-            vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
 
-            generateChunk(uPos);
-            checkChunk(add_f3(uPos, worldPos)); // add worldPos for wrapping
+            generateChunk(cPos);
+            checkChunk(add_f3(cPos, worldPos)); // add worldPos for wrapping
         }
     }
     // shift z
     if (abs(shift.z) > 0) {
         for (int x = 0; x < viewSize; x++)
         for (int y = 0; y < viewSize; y++) {
-            ivec3 ip = {x, y, stepi(shift.z, 0)*(viewSize)};
+            ivec3 ip = {x, y, (shift.z>0) ? shift.z*viewSize-1 : 0};
             vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
             vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
 
-            generateChunk(uPos);
-            checkChunk(add_f3(uPos, worldPos)); 
+            generateChunk(cPos);
+            checkChunk(add_f3(cPos, worldPos)); // add worldPos for wrapping
         }
     }
     // shift y
     if (abs(shift.y) > 0) {
         for (int x = 0; x < viewSize; x++)
         for (int z = 0; z < viewSize; z++) {
-            ivec3 ip = {x, stepi(shift.y, 0)*(viewSize), z};
+            ivec3 ip = {x, (shift.y>0) ? shift.y*viewSize-1 : 0, z};
             vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
             vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
 
-            generateChunk(uPos);
-            checkChunk(add_f3(uPos, worldPos));
+            generateChunk(cPos);
+            checkChunk(add_f3(cPos, worldPos)); // add worldPos for wrapping
         }
     }
     //checkSpawnChunks();

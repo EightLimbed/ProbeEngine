@@ -24,21 +24,21 @@ GLuint screenTex; // screen
 const int chunkSize = 31; // chunk size in blocks
 const int dataSize = chunkSize+1; // need +1 for boundaries
 const int chunkProbes = dataSize*dataSize*dataSize;
-const int viewSize = 24; // world size in chunks, 24 max rn
+const int viewSize = 24; // world size in chunks, odd number breaks edits?
 const int viewChunks = viewSize*viewSize*viewSize;
 const float full = (float)(dataSize*viewSize);
-const float center = (float)(viewSize)/2.0*(float)chunkSize; // integer devision rounds down to nearest chunk
+const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
 
 GLuint ssbo0ID; // probe data
-size_t ssbo0Size = sizeof(GLuint)*chunkProbes/4*viewChunks; // /4 for bitpacking, 8 bit floats
+size_t ssbo0Size = (sizeof(GLuint)*chunkProbes*viewChunks+3)/4; // /4 for bitpacking, 8 bit floats
+uint* surfaceData; // chunk mapping persistently mapped data pointer
 
 GLuint ssbo1ID; // material data
-size_t ssbo1Size = sizeof(GLuint)*chunkProbes/8*viewChunks; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
+size_t ssbo1Size = (sizeof(GLuint)*chunkProbes*viewChunks+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
-GLuint ssbo2ID; // chunk mapping data. Holds bitmask and IDs, in int array, where sign corresponds to empty, and value corresponds to index/ID of chunk.
-size_t ssbo2Size = sizeof(GLuint)*viewChunks;
-uint* ssbo2Data; // chunk mapping persistently mapped data pointer
+GLuint ssbo2ID; // chunk bitmask data,
+size_t ssbo2Size = (sizeof(GLuint)*viewChunks+31)/32; // /32 for bitpacking, 1 bit occupancy
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -64,10 +64,10 @@ int main() {
   worldPos = getChunkPos(player.pos); // update world position
 
   // creates SSBOs
+  //surfaceData = (uint *)createAndPersistentlyMapSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
-  //createSSBO(ssbo2ID, ssbo2Size, 2);
-  ssbo2Data = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // chunk index data
+  createSSBO(ssbo2ID, ssbo2Size, 2); // chunk occupancy data
 
   // loads shaders
   // raymarcher

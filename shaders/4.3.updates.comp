@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIDs {
-    int chunkIDs[];
+layout(std430, binding = 2) buffer OccupancyData {
+    uint occupancyData[];
 };
 
 uniform vec3 worldPos; // position of world, for local positioning
@@ -45,7 +45,7 @@ void main() {
     vec3 p = pp+cPos;
     uvec3 lp = getLocalPos(p-center, worldPos); // not centered in dispatch, need to center here for local stuff
 
-    chunkIDs[getChunkOccupancy(lp)] = -1; // assume empty for checker (important)
+    setChunkOccupancy(lp, 0); // assume empty for checker (important)
 
     float nd = getEdit(p-uPos, uType, uSize); // gets new distance
     float od = getProbe(lp); // gets current distance

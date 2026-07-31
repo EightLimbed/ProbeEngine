@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIDs {
-    int chunkIDs[];
+layout(std430, binding = 2) buffer OccupancyData {
+    uint occupancyData[];
 };
 
 //include shaderheaders/4.3.constantsH.comp
@@ -76,7 +76,7 @@ void main() {
     uint mat = material(p);
 
     uvec3 lp = getLocalPos(p-worldPos, worldPos); // this will handle shuffling. Updates from chunk manager will deal with this. Make sure chunk manager updates are done before terrain gen.
-    chunkIDs[getChunkOccupancy(lp)] = -1; // assume empty for checker (important)
+    setChunkOccupancy(lp, 0); // assume empty for checker (important)
 
     setMaterial(lp,mat);
     setProbe(lp,d);

@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer ChunkIDs {
-    int chunkIDs[];
+layout(std430, binding = 2) buffer OccupancyData {
+    uint occupancyData[];
 };
 
 // player data
@@ -36,19 +36,18 @@ float getProbeWarped(uvec3 lp) {
 }
 
 // interpolates between surrounding precomputed probe distances.
-float smoothDist(uvec3 lp, vec3 f) {
+float smoothDist(vec3 p) {
+    vec3 f = fract(p);
 
     // use get local pos so it loops properly
-    uvec3 mini = lp-lp%chunkSize;
-    uvec3 maxi = mini+chunkSize;
-    float d000 = getProbeWarped(clamp(lp + uvec3(0,0,0),mini,maxi));
-    float d100 = getProbeWarped(clamp(lp + uvec3(1,0,0),mini,maxi));
-    float d010 = getProbeWarped(clamp(lp + uvec3(0,1,0),mini,maxi));
-    float d110 = getProbeWarped(clamp(lp + uvec3(1,1,0),mini,maxi));
-    float d001 = getProbeWarped(clamp(lp + uvec3(0,0,1),mini,maxi));
-    float d101 = getProbeWarped(clamp(lp + uvec3(1,0,1),mini,maxi));
-    float d011 = getProbeWarped(clamp(lp + uvec3(0,1,1),mini,maxi));
-    float d111 = getProbeWarped(clamp(lp + uvec3(1,1,1),mini,maxi));
+    float d000 = getProbeWarped(getLocalPos(p + vec3(0,0,0),worldPos));
+    float d100 = getProbeWarped(getLocalPos(p + vec3(1,0,0),worldPos));
+    float d010 = getProbeWarped(getLocalPos(p + vec3(0,1,0),worldPos));
+    float d110 = getProbeWarped(getLocalPos(p + vec3(1,1,0),worldPos));
+    float d001 = getProbeWarped(getLocalPos(p + vec3(0,0,1),worldPos));
+    float d101 = getProbeWarped(getLocalPos(p + vec3(1,0,1),worldPos));
+    float d011 = getProbeWarped(getLocalPos(p + vec3(0,1,1),worldPos));
+    float d111 = getProbeWarped(getLocalPos(p + vec3(1,1,1),worldPos));
 
     // x interpolation
     float x00 = mix(d000, d100, f.x);
@@ -66,19 +65,18 @@ float smoothDist(uvec3 lp, vec3 f) {
     return d; // adjust for negative distances
 }
 
-vec4 smoothColor(uvec3 lp, vec3 f) {
+vec4 smoothColor(vec3 p) {
+    vec3 f = fract(p);
     
     // need bounds checks, but this should work otherwise for now
-    uvec3 mini = lp-lp%chunkSize;
-    uvec3 maxi = mini+chunkSize;
-    vec4 c000 = colors[getMaterial(clamp(lp + uvec3(0,0,0),mini,maxi))];
-    vec4 c100 = colors[getMaterial(clamp(lp + uvec3(1,0,0),mini,maxi))];
-    vec4 c010 = colors[getMaterial(clamp(lp + uvec3(0,1,0),mini,maxi))];
-    vec4 c110 = colors[getMaterial(clamp(lp + uvec3(1,1,0),mini,maxi))];
-    vec4 c001 = colors[getMaterial(clamp(lp + uvec3(0,0,1),mini,maxi))];
-    vec4 c101 = colors[getMaterial(clamp(lp + uvec3(1,0,1),mini,maxi))];
-    vec4 c011 = colors[getMaterial(clamp(lp + uvec3(0,1,1),mini,maxi))];
-    vec4 c111 = colors[getMaterial(clamp(lp + uvec3(1,1,1),mini,maxi))];
+    vec4 c000 = colors[getMaterial(getLocalPos(p + vec3(0,0,0),worldPos))];
+    vec4 c100 = colors[getMaterial(getLocalPos(p + vec3(1,0,0),worldPos))];
+    vec4 c010 = colors[getMaterial(getLocalPos(p + vec3(0,1,0),worldPos))];
+    vec4 c110 = colors[getMaterial(getLocalPos(p + vec3(1,1,0),worldPos))];
+    vec4 c001 = colors[getMaterial(getLocalPos(p + vec3(0,0,1),worldPos))];
+    vec4 c101 = colors[getMaterial(getLocalPos(p + vec3(1,0,1),worldPos))];
+    vec4 c011 = colors[getMaterial(getLocalPos(p + vec3(0,1,1),worldPos))];
+    vec4 c111 = colors[getMaterial(getLocalPos(p + vec3(1,1,1),worldPos))];
 
     // x interpolation
     vec4 x00 = mix(c000, c100, f.x);
@@ -100,12 +98,11 @@ vec4 smoothColor(uvec3 lp, vec3 f) {
 vec3 getNormal(vec3 p) {
     const float h = e*20.0; // higher coefficient makes things look smoother
     const vec2 k = vec2(1.0,-1.0);
-    vec3 ups[4] = {p+k.xyy*h, p+k.yyx*h, p+k.yxy*h, p+k.xxx*h};
     
-    return normalize(k.xyy*smoothDist(getLocalPos(ups[0], worldPos), fract(ups[0])) + 
-                     k.yyx*smoothDist(getLocalPos(ups[1], worldPos), fract(ups[1])) + 
-                     k.yxy*smoothDist(getLocalPos(ups[2], worldPos), fract(ups[2])) + 
-                     k.xxx*smoothDist(getLocalPos(ups[3], worldPos), fract(ups[3])));
+    return normalize(k.xyy*smoothDist(p+k.xyy*h) + 
+                     k.yyx*smoothDist(p+k.yyx*h) + 
+                     k.yxy*smoothDist(p+k.yxy*h) + 
+                     k.xxx*smoothDist(p+k.xxx*h));
 }
 
 // camera shizzle
@@ -139,30 +136,32 @@ void main() {
     for (int i = 0; i < raySteps; i++) {
 
         vec3 p = ro+rd*t; // calculate ray position
-        uvec3 lp = getLocalPos(p, worldPos);
-        vec3 f = fract(p);
         if (clamp(p, vec3(0.0), vec3(chunkSize*viewSize)) != p) break; // borders (temp)
 
         // distance to chunk border
         float cd = distToBorder(mod(p,float(chunkSize)), rd, vec3(chunkSize));
-        if (sign(chunkIDs[getChunkOccupancy(lp)]) == -1) { // if in empty, skip
+        if (getChunkOccupancy(getLocalPos(p, worldPos)) == 0) { // if in empty, skip
             t+=cd+e;
             continue;
         }
 
         // distance to surface
-        float d = smoothDist(lp, f);
+        float d = smoothDist(p);
         if (cd<d) {
-            collect += 0.1;
+            //collect += 0.1;
             collect = min(collect, 0.5);
         }
 
         // hit
         if (d < e) { 
             // coloring and stuff
-            float falloff = min(max(t/float(full)*2.1,float(i)/float(raySteps)),1.0);
+            //t/float(full)*2.1
+            float falloff = min(
+                            max(t/float(full)*2.2,
+                                float(i)/float(raySteps))
+                            ,1.0);
             float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
-            vec4 color = smoothColor(lp, f);
+            vec4 color = smoothColor(p);
 
             imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),pow(falloff, 18.0))+collect);
             return;
