@@ -9,6 +9,11 @@ float box(vec3 p, vec3 b) {
     return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0));
 }
 
+float cylinder(vec3 p, float r, float h) {
+  vec2 d = abs(vec2(length(p.xz),p.y)) - vec2(r,h);
+  return min(max(d.x,d.y),0.0) + length(max(d,0.0));
+}
+
 // basic hash function
 float hash(vec3 p3) {
     p3 = fract(p3 * 0.1031);

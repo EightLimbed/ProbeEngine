@@ -32,7 +32,25 @@ float smax(float a, float b, float k) {
     return max(a, b) + h*h*0.25/k;
 }
 
-// correct way to repeat space every s units
+float trees(vec3 p3, float s, float l) {
+    vec2 p = p3.xz;
+    vec2 id = round(p/s);
+    vec2  o = sign(p-s*id); // neighbor offset direction
+    
+    float d = 1e20;
+    for(int j=0; j<2; j++)
+    for(int i=0; i<2; i++) {
+        vec2 rid = id + vec2(i,j)*o;
+        vec2 r = p - s*rid;
+        vec3 r3 = vec3(r.x,p3.y,r.y);
+        float rad = hash(rid.xyy)*l;
+        d = min(d,cylinder(r3,rad,rad*4.0));
+    }
+    if (hash(id.xyy)*l<4.0) d = 1e20;
+    return d;
+}
+
+// correct way to repeat space every s units at l size
 float repeated(vec3 p, float s, float l) {
     vec3 id = round(p/s);
     vec3 o = sign(p-s*id); // neighbor offset direction
@@ -46,20 +64,26 @@ float repeated(vec3 p, float s, float l) {
         float rad = hash(rid)*l;
         d = min(d, sphere(r,rad));
     }
+
     return d;
 }
 
 // takes position, layer amplitude, layer amount, spacing, and radius/length of constructor shapes
 float terrain(vec3 p, float a, uint layers, float s, float l) {
     float d = p.y; // base/first layer
+    float n = d;
+    // mountains
     for (int i = 0; i < layers; i++) { // noise octaves
-        float n = repeated(p, s, l);
+        n = repeated(p, s, l);
         n = smax(n,d-a*s,0.3*s); // smoothly maximize octave a bit above current layer
         d = smin(n,d,0.3*s); // smoothly minimize current layer with octave
         p *= mat3(0.956,0,0.292,0,1,0,-0.292,0,0.956); // rotate next layer 17 degrees
         s *= 0.5; // reduce spacing and radius of next layer.
         l *= 0.5;
     }
+    // trees
+    //float t = trees(p+vec3(0,-128,0), 64.0, 5.0);
+
     return d;
 }
 

@@ -21,25 +21,24 @@ GLuint CheckerID; // empty checker
 GLuint screenTex; // screen
 
 // chunk data stuff
-const int chunkSize = 31; // chunk size in blocks
-const int dataSize = chunkSize+1; // need +1 for boundaries
-const int chunkProbes = dataSize*dataSize*dataSize;
+const int chunkSize = 32; // chunk size in blocks
+const int chunkProbes = chunkSize*chunkSize*chunkSize;
 const int viewSize = 24; // world size in chunks, odd number breaks edits?
 const int viewChunks = viewSize*viewSize*viewSize;
-const float full = (float)(dataSize*viewSize);
+const int alloted = viewChunks*chunkProbes;
+const float full = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
 
 GLuint ssbo0ID; // probe data
-size_t ssbo0Size = (sizeof(GLuint)*chunkProbes*viewChunks+3)/4; // /4 for bitpacking, 8 bit floats
+size_t ssbo0Size = (sizeof(GLuint)*alloted+3)/4; // /4 for bitpacking, 8 bit floats
 uint* surfaceData; // chunk mapping persistently mapped data pointer
 
 GLuint ssbo1ID; // material data
-size_t ssbo1Size = (sizeof(GLuint)*chunkProbes*viewChunks+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
+size_t ssbo1Size = (sizeof(GLuint)*alloted+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
 GLuint ssbo2ID; // chunk bitmask data,
-size_t ssbo2Size = (sizeof(GLuint)*viewChunks+31)/32; // /32 for bitpacking, 1 bit occupancy
-
+size_t ssbo2Size = (sizeof(GLuint)*viewChunks); // not bitpacking yet, maybe at all, it is slower
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);

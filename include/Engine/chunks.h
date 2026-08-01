@@ -4,7 +4,6 @@
 #include <Engine/shaders.h>
 
 // world specs
-extern const int dataSize;
 extern const int chunkSize;
 extern const int viewSize; // view size in chunks
 extern const int viewChunks;
@@ -47,7 +46,7 @@ void generateChunk(vec3 pos) {
     glUseProgram(TerrainID);
     shaderSetVec3(TerrainID, "worldPos", worldPos); // update world position
     shaderSetVec3(TerrainID, "cPos", pos);
-    glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
+    glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
@@ -55,7 +54,7 @@ void checkChunk(vec3 pos) {
     glUseProgram(CheckerID);
     shaderSetVec3(TerrainID, "worldPos", worldPos); // update world position
     shaderSetVec3(CheckerID, "cPos", pos);
-    glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
+    glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
@@ -70,7 +69,7 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     shaderSetUint(UpdatesID, "uMaterial", material);
     shaderSetVec3(UpdatesID, "cPos", cPos); // chunk offset position
 
-    glDispatchCompute((dataSize+3)/4,(dataSize+3)/4,(dataSize+3)/4);
+    glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 

@@ -34,6 +34,6 @@ void main() {
 
     float d = getProbe(lp); // gets distance of probe
     
-    if (d<=0.0) setChunkOccupancy(lp, 1); // set to full
+    if (d<=dMin) setChunkOccupancy(lp, 1); // set to full
 
 }
