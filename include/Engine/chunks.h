@@ -71,10 +71,16 @@ void generateChunk(vec3 pos) {
     indexData[uci] = empty; // assume chunk is empty for now
 
     // iterate until nearest empty chunk, and go there.
+    // uint slot = uci;
+    // for (uint i = 0u; i < uci; i++) {
+    //     if (indexData[i] == empty) slot --;
+    // }
+    // slot *= chunkProbes;
+
     uint slot = empty;
     for (uint i = 0u; i < viewChunks; i++) {
         if (indexData[i] == empty) {
-            slot = i*chunkProbes;  // make fit in data indexes.
+            slot = i*chunkProbes;
             break;
         }
     }
@@ -82,8 +88,8 @@ void generateChunk(vec3 pos) {
     // generates chunk, which also checks if chunk is full and sets its slot
     glUseProgram(TerrainID);
     shaderSetVec3(TerrainID, "cPos", subtract_f3(pos, worldPos));
-    shaderSetUint(TerrainID, "slot", slot); // set chunk index 
-    shaderSetUint(TerrainID, "cIndex", uci);
+    shaderSetUint(TerrainID, "slot", slot); // set slot
+    shaderSetUint(TerrainID, "cIndex", uci); // set chunk index
     glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     createFenceGPU();
@@ -113,6 +119,7 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
 
 // need function for the first pass upon loading where you assign a index to every chunk position (will do grid with posToIndex function)
 void genSpawnChunks() {
+    // early out if incorrect initialization
     for (uint i = 0u; i < viewChunks; i--) {
         if (indexData[i] != empty) {
             printf("Incorrect Initialization at: %u\n", i);
@@ -125,14 +132,20 @@ void genSpawnChunks() {
         vec3 p = {(float)x,(float)y,(float)z};
         vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos);
         generateChunk(cPos); // generates chunk at position
-        //checkChunk(cPos);
     }
+
     // checks
+    uint r = 0u;
+    uint fullHit = 0u;
     for (uint i = 0; i < viewChunks; i++) {
         uint reduced = indexData[i]/chunkProbes;
+        if (indexData[viewChunks-i-1] == empty && fullHit == 0u) r++; else fullHit = 1u;
         if (indexData[i] == empty)  printf("Chunk %u slot is empty\n", i);
         else printf("Chunk %u slot is: %u, with difference of: %u\n", i, reduced, i-reduced);
     }
+    
+
+    printf("End empties %u\n",r);
 }
 
 // need function to update chunk indexes when player moves. Will set indexes moved out of to new chunks indexes.

@@ -23,7 +23,7 @@ GLuint screenTex; // screen
 // chunk data stuff
 const int chunkSize = 32; // chunk size in blocks
 const int chunkProbes = chunkSize*chunkSize*chunkSize;
-const int viewSize = 32; // world size in chunks, odd number breaks edits?
+const int viewSize = 24; // world size in chunks, odd number breaks edits?
 const int viewChunks = viewSize*viewSize*viewSize;
 const int alloted = viewChunks*chunkProbes/2;
 const float axisSize = (float)(chunkSize*viewSize);

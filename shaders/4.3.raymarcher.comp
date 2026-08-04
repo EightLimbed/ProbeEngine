@@ -139,6 +139,7 @@ void main() {
         if (clamp(p, vec3(0.0), vec3(chunkSize*viewSize)) != p) break; // borders (temp)
 
         // distance to chunk border
+        //collect += float(indexData[posToChunkIndex(getLocalPos(p, worldPos))]/chunkProbes)/float(viewChunks*100);
         float cd = distToBorder(mod(p,float(chunkSize)), rd, vec3(chunkSize));
         if (indexData[posToChunkIndex(getLocalPos(p, worldPos))] == empty) { // if in empty, skip
             t+=cd+e*100.0;
