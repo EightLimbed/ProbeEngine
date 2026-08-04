@@ -1,0 +1,19 @@
+#version 440 core
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
+
+layout(std430, binding = 2) buffer IndexData {
+    uint indexData[];
+};
+
+//include shaderheaders/4.3.constantsH.comp
+
+// just sets all chunks to empty
+void main() {
+    uvec3 cp = gl_GlobalInvocationID; // local chunk position
+    if (clamp(cp, 0, viewSize-1) != cp) return; // SO IMPORTANT
+
+    uint index = cp.x+viewSize*(cp.y+viewSize*cp.z);
+
+    indexData[index] = empty;
+}

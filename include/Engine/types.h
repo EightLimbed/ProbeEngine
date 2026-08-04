@@ -38,6 +38,23 @@ vec3 multiply_f3xf3(vec3 a, vec3 b) {
   return c;
 }
 
+uvec3 divide_u3xu(uvec3 a, uint b) {
+  uvec3 c;
+  c.x = a.x/b;
+  c.y = a.y/b;
+  c.z = a.z/b;
+  return c;
+}
+
+uvec3 mod_u3xu(uvec3 a, uint b) {
+  uvec3 c;
+  c.x = a.x%b;
+  c.y = a.y%b;
+  c.z = a.z%b;
+  return c;
+}
+
+
 vec3 multiply_f3xf(vec3 a, float f) {
   vec3 c;
   c.x = a.x*f;
@@ -113,4 +130,12 @@ int maxi(int a, int b) {
 
 int stepi(int a, int b) {
   return (a<=b) ? 0 : 1;
+}
+
+uint* fillArrayValue(uint length, uint value) {
+  uint* array;
+  for (uint i = 0; i < length; i++) {
+    array[i] = value;
+  }
+  return array;
 }

@@ -12,19 +12,27 @@ vec3 getChunkPos(vec3 p) {
 // will handle chunk shuffling, ie getting chunk pos, and matching to actual position, before updating, as well as matching to chunk position
 // also need to handle global position offset, ie: chunks player has travelled in each direction.
 uvec3 getLocalPos(vec3 p, vec3 worldPos) {
-    uvec3 lp = (uvec3(mod(floor(p)+worldPos, full)));
-    // wrap lp 
+    uvec3 lp = (uvec3(mod(floor(p)+worldPos, axisSize)));
     return lp;
 }
 
-// takes position in chunk, and chunk size, and spits out positional index in chunkSize^3 array.
+// gets index in chunk prefix array from position
+uint posToChunkIndex(uvec3 lp) {
+    uvec3 cp = lp/chunkSize;
+    return cp.x+viewSize*(cp.y+viewSize*cp.z);
+}
+
+// takes position in chunk, and uses chunk data previously set to get index.
 uint posToIndex(uvec3 lp) {
-    return lp.x+full*(lp.y+full*lp.z);
+    uint slot = indexData[posToChunkIndex(lp)];
+    uvec3 pp = lp % chunkSize;
+    uint i = pp.x+chunkSize*(pp.y+chunkSize*pp.z);
+    return slot+i;
+    //return lp.x+axisSize*(lp.y+axisSize*lp.z);
 }
 
 // sets probe with 8 bit packing
-void setProbe(uvec3 lp, float d) {
-    uint index = posToIndex(lp);
+void setProbe(uint index, float d) {
     uint uintIndex = index >> 2u; // divide by 4 (shift/half twice)
     uint subIndex = index & 3u;
     uint bitShift = subIndex * 8u; // bit shift
@@ -41,8 +49,7 @@ void setProbe(uvec3 lp, float d) {
 }
 
 // sets material with 4 bit packing
-void setMaterial(uvec3 lp, uint m) {
-    uint index = posToIndex(lp);
+void setMaterial(uint index, uint m) {
     uint uintIndex = index >> 3u; // divide by 8
     uint bitShift = (index & 7u) * 4u; // bit shift
 
@@ -51,23 +58,6 @@ void setMaterial(uvec3 lp, uint m) {
 
     atomicAnd(materialData[uintIndex], clearMask);
     atomicOr(materialData[uintIndex], insert); // set value. need clear mask if overwriting
-}
-
-// sets material with 1 bit packing
-void setChunkOccupancy(uvec3 lp, uint o) {
-    uvec3 ucp = lp/chunkSize; // chunk indexes
-    uint index = ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
-    occupancyData[index] = o;
-    return;
-
-    uint uintIndex = index >> 5u; // divide by 32
-    uint bitShift = (index & 31u); // bit shift 31 bits
-
-    uint insert = (o & 1u) << bitShift;
-    uint clearMask = ~(1u << bitShift); // clear bit
-
-    atomicAnd(occupancyData[uintIndex], clearMask);
-    atomicOr(occupancyData[uintIndex], insert); // set value. need clear mask if overwriting
 }
 
 // gets probe with 8 bit packing
@@ -88,16 +78,4 @@ uint getMaterial(uvec3 lp) {
     uint bitShift = (index & 7u) * 4u; // shift amount
 
     return (materialData[uintIndex] >> bitShift) & 0xFu;
-}
-
-uint getChunkOccupancy(uvec3 lp) {
-    uvec3 ucp = lp/chunkSize; // chunk indexes
-    uint index = ucp.x+viewSize*(ucp.y+viewSize*ucp.z);
-    
-    return occupancyData[index];
-
-    uint uintIndex = index >> 5u;
-    uint bitShift = (index & 31u); // shift amount
-
-    return (occupancyData[uintIndex] >> bitShift) & 0xFu;
 }

@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer OccupancyData {
-    uint occupancyData[];
+layout(std430, binding = 2) buffer IndexData {
+    uint indexData[];
 };
 
 // player data
@@ -140,8 +140,8 @@ void main() {
 
         // distance to chunk border
         float cd = distToBorder(mod(p,float(chunkSize)), rd, vec3(chunkSize));
-        if (getChunkOccupancy(getLocalPos(p, worldPos)) == 0) { // if in empty, skip
-            t+=cd+e;
+        if (indexData[posToChunkIndex(getLocalPos(p, worldPos))] == empty) { // if in empty, skip
+            t+=cd+e*100.0;
             continue;
         }
 
@@ -157,7 +157,7 @@ void main() {
             // coloring and stuff
             //t/float(full)*2.1
             float falloff = min(
-                            max(t/float(full)*2.2,
+                            max(t/float(axisSize)*2.2,
                                 float(i)/float(raySteps))
                             ,1.0);
             float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading

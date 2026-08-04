@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer OccupancyData {
-    uint occupancyData[];
+layout(std430, binding = 2) buffer IndexData {
+    uint indexData[];
 };
 
 //include shaderheaders/4.3.constantsH.comp
@@ -19,8 +19,9 @@ layout(std430, binding = 2) buffer OccupancyData {
 //include shaderheaders/4.3.setgetH.comp
 
 // parameters
-uniform vec3 worldPos; // position of world, for local positioning
-uniform vec3 cPos; // global position to generate chunk at
+uniform uint slot; // slot in buffers to generate at
+uniform uint cIndex;
+uniform vec3 cPos; // global position for generation
 
 float smin(float a, float b, float k) {
     float h = max(k-abs(a-b),0.0);
@@ -94,14 +95,20 @@ uint material(vec3 p) {
 void main() {
     uvec3 pp = gl_GlobalInvocationID; // local chunk position
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
-    vec3 p = vec3(pp)+cPos+worldPos; // global position
+    vec3 p = vec3(pp)+cPos; // global position
 
+    // gets terrain
     float d = terrain(p, 0.04, 8, 2560.0, 1280.0);
     uint mat = material(p);
 
-    uvec3 lp = getLocalPos(p-worldPos, worldPos); // this will handle shuffling. Updates from chunk manager will deal with this. Make sure chunk manager updates are done before terrain gen.
-    setChunkOccupancy(lp, 0); // assume empty for checker (important)
+    // sets chunk to full if anything is solid within
+    if (d<=0.0) indexData[cIndex] = slot; // just need any value that isnt full, index gets set cpu side
 
-    setMaterial(lp,mat);
-    setProbe(lp,d);
+    // gets index within chunk.
+    uint i = pp.x+chunkSize*(pp.y+chunkSize*pp.z);
+
+    // sets data at index
+    uint index = slot+i; // index globally
+    setMaterial(index,mat);
+    setProbe(index,d);
 }

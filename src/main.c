@@ -23,10 +23,10 @@ GLuint screenTex; // screen
 // chunk data stuff
 const int chunkSize = 32; // chunk size in blocks
 const int chunkProbes = chunkSize*chunkSize*chunkSize;
-const int viewSize = 24; // world size in chunks, odd number breaks edits?
+const int viewSize = 32; // world size in chunks, odd number breaks edits?
 const int viewChunks = viewSize*viewSize*viewSize;
-const int alloted = viewChunks*chunkProbes;
-const float full = (float)(chunkSize*viewSize);
+const int alloted = viewChunks*chunkProbes/2;
+const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
 
@@ -38,7 +38,9 @@ GLuint ssbo1ID; // material data
 size_t ssbo1Size = (sizeof(GLuint)*alloted+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
 GLuint ssbo2ID; // chunk bitmask data,
-size_t ssbo2Size = (sizeof(GLuint)*viewChunks); // not bitpacking yet, maybe at all, it is slower
+size_t ssbo2Size = (sizeof(GLuint)*viewChunks); // index data
+uint* indexData;
+
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -66,7 +68,8 @@ int main() {
   //surfaceData = (uint *)createAndPersistentlyMapSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
-  createSSBO(ssbo2ID, ssbo2Size, 2); // chunk occupancy data
+  indexData = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // index data
+  //createSSBO(ssbo2ID, ssbo2Size, 2); // chunk occupancy data
 
   // loads shaders
   // raymarcher
@@ -82,15 +85,15 @@ int main() {
   }
 
   // update shader
-  shaderCompile(&UpdatesID, GL_COMPUTE_SHADER, "shaders/4.3.updates.comp");
-  UpdatesID = linkComputeShader(UpdatesID);
+  //shaderCompile(&UpdatesID, GL_COMPUTE_SHADER, "shaders/4.3.updates.comp");
+  //UpdatesID = linkComputeShader(UpdatesID);
 
   // terrain gen shader
   shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
   TerrainID = linkComputeShader(TerrainID);
 
-  // empty checker shader
-  shaderCompile(&CheckerID, GL_COMPUTE_SHADER, "shaders/4.3.checker.comp");
+  // chunk reset shader
+  shaderCompile(&CheckerID, GL_COMPUTE_SHADER, "shaders/4.3.reset.comp");
   CheckerID = linkComputeShader(CheckerID);
   
   // updates settings to make sure everything is correct
@@ -102,6 +105,7 @@ int main() {
   glBindVertexArray(vao);
 
   // generate terrain
+  resetChunks();
   genSpawnChunks();
   //checkSpawnChunks(sp);
 
@@ -153,7 +157,7 @@ int main() {
                        (int)(worldPos.y-owp.y)/chunkSize,
                        (int)(worldPos.z-owp.z)/chunkSize};
         //printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
-        shiftChunks(shift);
+        //shiftChunks(shift);
     }
     owp = worldPos;
 

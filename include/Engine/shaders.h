@@ -248,7 +248,7 @@ void* createAndPersistentlyMapSSBO(GLuint ID, size_t size, int index) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ID);
 
     // define required flags for immutable storage
-    GLbitfield storageFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+    GLbitfield storageFlags = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
 
     // allocate memory
     glBufferStorage(GL_SHADER_STORAGE_BUFFER, size, NULL, storageFlags);
@@ -257,6 +257,17 @@ void* createAndPersistentlyMapSSBO(GLuint ID, size_t size, int index) {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, ID);
 
     // retrieve cpu pointer
-    GLbitfield mapFlags = GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
+    GLbitfield mapFlags = GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT;
     return glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, size, mapFlags);
+}
+
+// creates gpu fence sync object
+void createFenceGPU() {
+    GLsync gpuSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+    GLenum waitStatus = glClientWaitSync(gpuSync, GL_SYNC_FLUSH_COMMANDS_BIT, 5000000000); // 5 second timeout
+    if (waitStatus == GL_ALREADY_SIGNALED || waitStatus == GL_CONDITION_SATISFIED) {
+        return;
+    } else {
+        printf("GPU sync error.");
+    }
 }
