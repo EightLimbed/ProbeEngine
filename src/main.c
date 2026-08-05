@@ -21,11 +21,11 @@ GLuint CheckerID; // empty checker
 GLuint screenTex; // screen
 
 // chunk data stuff
-const int chunkSize = 32; // chunk size in blocks
-const int chunkProbes = chunkSize*chunkSize*chunkSize;
-const int viewSize = 24; // world size in chunks, odd number breaks edits?
-const int viewChunks = viewSize*viewSize*viewSize;
-const int alloted = viewChunks*chunkProbes/2;
+const uint chunkSize = 32; // chunk size in blocks
+const uint chunkProbes = chunkSize*chunkSize*chunkSize;
+const uint viewSize = 32; // world size in chunks, odd number breaks edits?
+const uint viewChunks = viewSize*viewSize*viewSize;
+const uint alloted = viewChunks*chunkProbes/6;
 const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
@@ -153,11 +153,12 @@ int main() {
     }
 
     if (!equal_f3(worldPos, owp)) {
+        //generateChunk(vec3 pos)
         ivec3 shift = {(int)(worldPos.x-owp.x)/chunkSize,
                        (int)(worldPos.y-owp.y)/chunkSize,
                        (int)(worldPos.z-owp.z)/chunkSize};
         //printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
-        //shiftChunks(shift);
+        shiftChunks(shift);
     }
     owp = worldPos;
 

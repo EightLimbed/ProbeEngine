@@ -108,7 +108,7 @@ void main() {
     uint i = pp.x+chunkSize*(pp.y+chunkSize*pp.z);
 
     // sets data at index
-    uint index = slot+i; // index globally
+    uint index = slot*viewChunks+i; // index globally
     setMaterial(index,mat);
     setProbe(index,d);
 }
