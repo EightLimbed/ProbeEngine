@@ -15,7 +15,7 @@ GLuint ScreenID; // screenshader
 GLuint MarcherID; // raymarcher
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
-GLuint CheckerID; // empty checker
+GLuint ResetID; // index occupancy resetter
 
 // textures
 GLuint screenTex; // screen
@@ -23,9 +23,9 @@ GLuint screenTex; // screen
 // chunk data stuff
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 32; // world size in chunks, odd number breaks edits?
+const uint viewSize = 12; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
-const uint alloted = viewChunks*chunkProbes/6;
+const uint alloted = viewChunks*chunkProbes/2;
 const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
@@ -59,7 +59,7 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {0.0,0.0,0.0};
+  {vec3 pos = {center,0.0,center};
   vec3 dir = {0.0,0.0,1.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
@@ -93,8 +93,8 @@ int main() {
   TerrainID = linkComputeShader(TerrainID);
 
   // chunk reset shader
-  shaderCompile(&CheckerID, GL_COMPUTE_SHADER, "shaders/4.3.reset.comp");
-  CheckerID = linkComputeShader(CheckerID);
+  shaderCompile(&ResetID, GL_COMPUTE_SHADER, "shaders/4.3.reset.comp");
+  ResetID = linkComputeShader(ResetID);
   
   // updates settings to make sure everything is correct
   updateSettings();
@@ -107,6 +107,7 @@ int main() {
   // generate terrain
   resetChunks();
   genSpawnChunks();
+  generateChunk(player.pos);
   //checkSpawnChunks(sp);
 
   // frame time
@@ -151,13 +152,14 @@ int main() {
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
         applyUpdate(target, player.mousePress, 1, 6.0, 7);
     }
+    //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);
 
     if (!equal_f3(worldPos, owp)) {
         //generateChunk(vec3 pos)
-        ivec3 shift = {(int)(worldPos.x-owp.x)/chunkSize,
-                       (int)(worldPos.y-owp.y)/chunkSize,
-                       (int)(worldPos.z-owp.z)/chunkSize};
-        //printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
+        ivec3 shift = {(int)(worldPos.x-owp.x)/(int)chunkSize,
+                       (int)(worldPos.y-owp.y)/(int)chunkSize,
+                       (int)(worldPos.z-owp.z)/(int)chunkSize};
+        printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
         shiftChunks(shift);
     }
     owp = worldPos;

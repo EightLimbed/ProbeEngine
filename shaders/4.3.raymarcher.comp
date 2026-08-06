@@ -130,7 +130,7 @@ void main() {
 
     // marching
     float t = 0.0;
-    vec3 ro = pPos-worldPos+center;
+    vec3 ro = pPos-worldPos+center; // ray pos local to view
     vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
     float collect = 0.0;
     for (int i = 0; i < raySteps; i++) {
@@ -142,14 +142,14 @@ void main() {
         //collect += float(indexData[posToChunkIndex(getLocalPos(p, worldPos))]/chunkProbes)/float(viewChunks*100);
         float cd = distToBorder(mod(p,float(chunkSize)), rd, vec3(chunkSize));
         if (indexData[posToChunkIndex(getLocalPos(p, worldPos))] == empty) { // if in empty, skip
-            t+=cd+1.0;
+            t+=cd+e;
             continue;
         }
 
         // distance to surface
         float d = smoothDist(p);
         if (cd<d) {
-            collect += 0.1;
+            //collect += 0.1;
             collect = min(collect, 0.5);
         }
 

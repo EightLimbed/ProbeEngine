@@ -13,7 +13,6 @@ extern const uint viewChunks;
 extern const uint chunkProbes;
 extern const float center;
 
-
 // buffer data
 extern GLuint ssbo2ID; // chunk mapping data
 extern size_t ssbo2Size;
@@ -32,8 +31,8 @@ extern GLuint TerrainID;
 // updater
 extern GLuint UpdatesID;
 
-// empty checker
-extern GLuint CheckerID;
+// index occupancy resetter
+extern GLuint ResetID;
 
 // empty chunk ID
 const uint empty = 0xFFFFFFFFu;
@@ -44,17 +43,8 @@ vec3 getChunkPos(vec3 p) {
     return cp;
 }
 
-vec3 getChunkPosCentered(vec3 p) {
-    float cs = (float)chunkSize;
-    vec3 cp = multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
-    vec3 ct = {center,center,center};
-    //vec3 print = multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
-    //printf("Chunk Pos: (%f,%f,%f)\n",print.x,print.y,print.z);
-    return subtract_f3(cp, ct);
-}
-
 uvec3 getLocalPos(vec3 p) {
-    uvec3 lp = mod_u3xu(to_uvec3((add_f3(floor_f3(p),worldPos))), chunkSize*viewSize);
+    uvec3 lp = mod_u3xu(vec3_to_uvec3((add_f3(floor_f3(p),worldPos))), chunkSize*viewSize);
     return lp;
 }
 
@@ -74,8 +64,6 @@ void generateChunk(vec3 pos) {
         slotOccupancy[indexData[uci]] = 0u; // empty old slot this chunk was filling
         indexData[uci] = empty; // assume chunk is empty for now
     }
-    //indexData[uci] = empty; // assume chunk is empty for now
-
 
     //iterate until nearest empty chunk, and go there.
     uint slot;
@@ -99,13 +87,28 @@ void generateChunk(vec3 pos) {
     if (indexData[uci] == empty) slotOccupancy[slot] = 0u; // if chunk not filled keep found slot empty
 }
 
+// gets data structures ready for chunks
 void resetChunks() {
+    // create slotOccupancy map
     free(slotOccupancy);
     slotOccupancy = calloc(viewChunks,sizeof(uint));
-    glUseProgram(CheckerID);
-    glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
+    // set all indexes to empty
+    glUseProgram(ResetID);
+    glDispatchCompute((viewSize+3)/4,(viewSize+3)/4,(viewSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     createFenceGPU();
+}
+
+void printChunkData() {
+    uint r = 0u;
+    for (uint i = 0; i < viewChunks; i++) {
+        uint reduced = indexData[i]/chunkProbes;
+        if (indexData[viewChunks-i-1] == empty) r++;
+        //if (indexData[i] == empty)  printf("Chunk %u slot is empty\n", i);
+        //else printf("Chunk %u slot is: %u, with difference of: %u\n", i, reduced, i-reduced);
+    }
+    
+    printf("%u empties out of %u chunks (1 in %u full).\n",r,viewChunks,viewChunks/(viewChunks-r));
 }
 
 void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint material) {
@@ -141,53 +144,43 @@ void genSpawnChunks() {
     }
 
     // checks
-    uint r = 0u;
-    for (uint i = 0; i < viewChunks; i++) {
-        uint reduced = indexData[i]/chunkProbes;
-        if (indexData[viewChunks-i-1] == empty) r++;
-        //if (indexData[i] == empty)  printf("Chunk %u slot is empty\n", i);
-        //else printf("Chunk %u slot is: %u, with difference of: %u\n", i, reduced, i-reduced);
-    }
-    
-    printf("%u empties out of %u chunks (1 in %u full).\n",r,viewChunks,viewChunks/(viewChunks-r));
+    printChunkData();
 }
 
 // need function to update chunk indexes when player moves. Will set indexes moved out of to new chunks indexes.
 // positioning wrong, going in right place in memory tho
 void shiftChunks(ivec3 shift) {
     // shift x
-    if (abs(shift.x) > 0) {
+    if (shift.x != 0) {
         for (int y = 0; y < viewSize; y++)
         for (int z = 0; z < viewSize; z++) {
-            ivec3 ip = {(shift.x>0) ? shift.x*viewSize-1 : 0, y, z}; // need -1, likely because shifting or something idk
-            vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
+            ivec3 ip = {(shift.x>0) ? shift.x*viewSize-1 : 0, y-viewSize/2, z-viewSize/2}; // need -1, likely because shifting or something idk
+            vec3 cPos = multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize);
 
             generateChunk(cPos);
         }
     }
     // shift z
-    if (abs(shift.z) > 0) {
+    if (shift.z != 0) {
         for (int x = 0; x < viewSize; x++)
         for (int y = 0; y < viewSize; y++) {
-            ivec3 ip = {x, y, (shift.z>0) ? shift.z*viewSize-1 : 0};
-            vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
-            vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
+            ivec3 ip = {x-viewSize/2, y-viewSize/2, (shift.z>0) ? shift.z*viewSize-1 : 0};
+            vec3 cPos = multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize);
 
             generateChunk(cPos);
         }
     }
     // shift y
-    if (abs(shift.y) > 0) {
+    if (shift.y != 0) {
         for (int x = 0; x < viewSize; x++)
         for (int z = 0; z < viewSize; z++) {
-            ivec3 ip = {x, (shift.y>0) ? shift.y*viewSize-1 : 0, z};
-            vec3 cPos = multiply_f3xf(to_vec3(ip), (float)chunkSize);
-            vec3 uPos = subtract_f3(cPos, multiply_f3xf(to_vec3(shift), (float)chunkSize));
+            ivec3 ip = {x-viewSize/2, (shift.y>0) ? shift.y*viewSize-1 : 0, z-viewSize/2};
+            vec3 cPos = multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize);
 
             generateChunk(cPos);
         }
     }
-    //checkSpawnChunks();
+    printChunkData();
 
 
     // apply edits saved

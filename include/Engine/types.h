@@ -87,7 +87,7 @@ int equal_f3(vec3 a, vec3 b) {
   return equal;
 }
 
-uvec3 to_uvec3(vec3 a) {
+uvec3 vec3_to_uvec3(vec3 a) {
   uvec3 c;
   c.x = (uint)a.x;
   c.y = (uint)a.y;
@@ -95,7 +95,15 @@ uvec3 to_uvec3(vec3 a) {
   return c;
 }
 
-vec3 to_vec3(ivec3 a) {
+vec3 ivec3_to_vec3(ivec3 a) {
+  vec3 c;
+  c.x = (float)a.x;
+  c.y = (float)a.y;
+  c.z = (float)a.z;
+  return c;
+}
+
+vec3 uvec3_to_vec3(uvec3 a) {
   vec3 c;
   c.x = (float)a.x;
   c.y = (float)a.y;
