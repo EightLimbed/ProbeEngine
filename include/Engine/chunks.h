@@ -44,7 +44,7 @@ vec3 getChunkPos(vec3 p) {
 }
 
 uvec3 getLocalPos(vec3 p) {
-    uvec3 lp = mod_u3xu(vec3_to_uvec3((add_f3(floor_f3(p),worldPos))), chunkSize*viewSize);
+    uvec3 lp = vec3_to_uvec3(mod_f3xf(add_f3(floor_f3(p),worldPos), (float)chunkSize*viewSize));
     return lp;
 }
 
@@ -65,25 +65,28 @@ void generateChunk(vec3 pos) {
         indexData[uci] = empty; // assume chunk is empty for now
     }
 
-    //iterate until nearest empty chunk, and go there.
-    uint slot;
+    // find an empty chunk, and go there
+    uint slot; // if slot stays empty, don't generate
+    //uint hash = hash_uint(uci); // hash for easier search
     for (uint i = 0u; i < viewChunks; i++) {
-        if (slotOccupancy[i] == 0u) { // if empty chunk found, set slot.
-            slot = i;
-            slotOccupancy[i] = 1u; // flag chunk as full
+        uint index = i;
+        if (slotOccupancy[index] == 0u) { // if empty chunk found, set slot.
+            slot = index;
+            slotOccupancy[index] = 1u; // flag chunk as full
+            //printf("%u steps required for chunk.\n", i);
             break;
         }
     }
 
     // generates chunk, which also checks if chunk is full and sets its slot
     glUseProgram(TerrainID);
-    shaderSetVec3(TerrainID, "cPos", pos);
+    shaderSetVec3(TerrainID, "cPos", add_f3(pos, worldPos));
     shaderSetUint(TerrainID, "slot", slot); // set slot
     shaderSetUint(TerrainID, "cIndex", uci); // set chunk index
     glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     createFenceGPU();
-
+    
     if (indexData[uci] == empty) slotOccupancy[slot] = 0u; // if chunk not filled keep found slot empty
 }
 
@@ -107,8 +110,9 @@ void printChunkData() {
         //if (indexData[i] == empty)  printf("Chunk %u slot is empty\n", i);
         //else printf("Chunk %u slot is: %u, with difference of: %u\n", i, reduced, i-reduced);
     }
-    
-    printf("%u empties out of %u chunks (1 in %u full).\n",r,viewChunks,viewChunks/(viewChunks-r));
+
+    if (viewChunks-r > 0u) printf("%u empties out of %u chunks (1 in %u full).\n",r,viewChunks,viewChunks/(viewChunks-r));
+    else printf("No chunks full.\n");
 }
 
 void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint material) {
@@ -139,7 +143,7 @@ void genSpawnChunks() {
     for (int y = 0; y < viewSize; y++)
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
-        vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos);
+        vec3 cPos = multiply_f3xf(p, (float)chunkSize);
         generateChunk(cPos); // generates chunk at position
     }
 
@@ -154,7 +158,7 @@ void shiftChunks(ivec3 shift) {
     if (shift.x != 0) {
         for (int y = 0; y < viewSize; y++)
         for (int z = 0; z < viewSize; z++) {
-            ivec3 ip = {(shift.x>0) ? shift.x*viewSize-1 : 0, y-viewSize/2, z-viewSize/2}; // need -1, likely because shifting or something idk
+            ivec3 ip = {(shift.x>0) ? shift.x*viewSize-1 : 0, y, z}; // need -1, likely because shifting or something idk
             vec3 cPos = multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize);
 
             generateChunk(cPos);
@@ -164,7 +168,7 @@ void shiftChunks(ivec3 shift) {
     if (shift.z != 0) {
         for (int x = 0; x < viewSize; x++)
         for (int y = 0; y < viewSize; y++) {
-            ivec3 ip = {x-viewSize/2, y-viewSize/2, (shift.z>0) ? shift.z*viewSize-1 : 0};
+            ivec3 ip = {x, y, (shift.z>0) ? shift.z*viewSize-1 : 0};
             vec3 cPos = multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize);
 
             generateChunk(cPos);
@@ -174,7 +178,7 @@ void shiftChunks(ivec3 shift) {
     if (shift.y != 0) {
         for (int x = 0; x < viewSize; x++)
         for (int z = 0; z < viewSize; z++) {
-            ivec3 ip = {x-viewSize/2, (shift.y>0) ? shift.y*viewSize-1 : 0, z-viewSize/2};
+            ivec3 ip = {x, (shift.y>0) ? shift.y*viewSize-1 : 0, z};
             vec3 cPos = multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize);
 
             generateChunk(cPos);

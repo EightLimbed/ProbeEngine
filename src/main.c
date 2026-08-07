@@ -23,7 +23,7 @@ GLuint screenTex; // screen
 // chunk data stuff
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 12; // world size in chunks, odd number breaks edits?
+const uint viewSize = 24; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
 const uint alloted = viewChunks*chunkProbes/2;
 const float axisSize = (float)(chunkSize*viewSize);
@@ -159,7 +159,7 @@ int main() {
         ivec3 shift = {(int)(worldPos.x-owp.x)/(int)chunkSize,
                        (int)(worldPos.y-owp.y)/(int)chunkSize,
                        (int)(worldPos.z-owp.z)/(int)chunkSize};
-        printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
+        //printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
         shiftChunks(shift);
     }
     owp = worldPos;

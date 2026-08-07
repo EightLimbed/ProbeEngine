@@ -46,11 +46,16 @@ uvec3 divide_u3xu(uvec3 a, uint b) {
   return c;
 }
 
-uvec3 mod_u3xu(uvec3 a, uint b) {
-  uvec3 c;
-  c.x = a.x%b;
-  c.y = a.y%b;
-  c.z = a.z%b;
+// glsl works differently for negative numbers
+double glsl_mod(double x, double y) {
+    return x - y * floor(x / y);
+}
+
+vec3 mod_f3xf(vec3 a, float b) {
+  vec3 c;
+  c.x = glsl_mod(a.x,b);
+  c.y = glsl_mod(a.y,b);
+  c.z = glsl_mod(a.z,b);
   return c;
 }
 
@@ -140,10 +145,9 @@ int stepi(int a, int b) {
   return (a<=b) ? 0 : 1;
 }
 
-uint* fillArrayValue(uint length, uint value) {
-  uint* array;
-  for (uint i = 0; i < length; i++) {
-    array[i] = value;
-  }
-  return array;
+uint hash_uint(uint x) {
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = ((x >> 16) ^ x) * 0x45d9f3b;
+    x = (x >> 16) ^ x;
+    return x;
 }
