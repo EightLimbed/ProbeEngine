@@ -66,8 +66,8 @@ void setMaterial(uint index, uint m) {
 }
 
 // gets probe with 8 bit packing
-float getProbe(uvec3 lp) {
-    uint index = posToIndex(lp);
+float getProbe(uint index) {
+    //uint index = posToIndex(lp);
     if (index == empty) return e; // safety for empties
 
     uint uintIndex = index >> 2u;
@@ -79,8 +79,8 @@ float getProbe(uvec3 lp) {
 }
 
 // gets material with 4 bit packing
-uint getMaterial(uvec3 lp) {
-    uint index = posToIndex(lp);
+uint getMaterial(uint index) {
+    //uint index = posToIndex(lp);
     uint uintIndex = index >> 3u;
     uint bitShift = (index & 7u) * 4u; // shift amount
 

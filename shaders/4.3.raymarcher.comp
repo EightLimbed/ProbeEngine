@@ -30,24 +30,26 @@ uniform float iTime;
 //include shaderheaders/4.3.materialsH.comp
 //include shaderheaders/4.3.setgetH.comp
 
-float getProbeWarped(uvec3 lp) {
-    //float warp = (getMaterial(lp)==7u) ? (sin(iTime*4.0+lp.y)-1.0)/4.0 : 0.0;
-    return getProbe(lp);//+warp;
+float getProbeWarped(vec3 p) {
+    uvec3 lp = getLocalPos(p, worldPos);
+    uint index = posToIndex(lp);
+    //float warp = (sin(p.y/5.0)-1.0)/2.0;
+    return getProbe(index);//+warp;
 }
 
 // interpolates between surrounding precomputed probe distances.
 float smoothDist(vec3 p) {
     vec3 f = fract(p);
 
-    // use get local pos so it loops properly
-    float d000 = getProbeWarped(getLocalPos(p + vec3(0,0,0),worldPos));
-    float d100 = getProbeWarped(getLocalPos(p + vec3(1,0,0),worldPos));
-    float d010 = getProbeWarped(getLocalPos(p + vec3(0,1,0),worldPos));
-    float d110 = getProbeWarped(getLocalPos(p + vec3(1,1,0),worldPos));
-    float d001 = getProbeWarped(getLocalPos(p + vec3(0,0,1),worldPos));
-    float d101 = getProbeWarped(getLocalPos(p + vec3(1,0,1),worldPos));
-    float d011 = getProbeWarped(getLocalPos(p + vec3(0,1,1),worldPos));
-    float d111 = getProbeWarped(getLocalPos(p + vec3(1,1,1),worldPos));
+    // get all probes
+    float d000 = getProbeWarped(p + vec3(0,0,0));
+    float d100 = getProbeWarped(p + vec3(1,0,0));
+    float d010 = getProbeWarped(p + vec3(0,1,0));
+    float d110 = getProbeWarped(p + vec3(1,1,0));
+    float d001 = getProbeWarped(p + vec3(0,0,1));
+    float d101 = getProbeWarped(p + vec3(1,0,1));
+    float d011 = getProbeWarped(p + vec3(0,1,1));
+    float d111 = getProbeWarped(p + vec3(1,1,1));
 
     // x interpolation
     float x00 = mix(d000, d100, f.x);
@@ -69,14 +71,14 @@ vec4 smoothColor(vec3 p) {
     vec3 f = fract(p);
     
     // need bounds checks, but this should work otherwise for now
-    vec4 c000 = colors[getMaterial(getLocalPos(p + vec3(0,0,0),worldPos))];
-    vec4 c100 = colors[getMaterial(getLocalPos(p + vec3(1,0,0),worldPos))];
-    vec4 c010 = colors[getMaterial(getLocalPos(p + vec3(0,1,0),worldPos))];
-    vec4 c110 = colors[getMaterial(getLocalPos(p + vec3(1,1,0),worldPos))];
-    vec4 c001 = colors[getMaterial(getLocalPos(p + vec3(0,0,1),worldPos))];
-    vec4 c101 = colors[getMaterial(getLocalPos(p + vec3(1,0,1),worldPos))];
-    vec4 c011 = colors[getMaterial(getLocalPos(p + vec3(0,1,1),worldPos))];
-    vec4 c111 = colors[getMaterial(getLocalPos(p + vec3(1,1,1),worldPos))];
+    vec4 c000 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,0),worldPos)))];
+    vec4 c100 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,0),worldPos)))];
+    vec4 c010 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,0),worldPos)))];
+    vec4 c110 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,0),worldPos)))];
+    vec4 c001 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,1),worldPos)))];
+    vec4 c101 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,1),worldPos)))];
+    vec4 c011 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,1),worldPos)))];
+    vec4 c111 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,1),worldPos)))];
 
     // x interpolation
     vec4 x00 = mix(c000, c100, f.x);

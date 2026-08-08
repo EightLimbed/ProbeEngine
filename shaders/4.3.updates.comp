@@ -14,13 +14,15 @@ layout(std430, binding = 2) buffer IndexData {
     uint indexData[];
 };
 
-uniform vec3 worldPos; // position of world, for local positioning
-uniform vec3 uPos; // position of edit
-uniform int uClick; // -1:place or 1:break
+uniform uint slot; // slot in buffers to generate at
+uniform uint cIndex; // chunk index that stores slot
+uniform vec3 cPos;
+uniform vec3 uPos; // local to chunk, position of edit
+
 uniform float uSize; // size of edit 
 uniform uint uType; // type of edit
-uniform uint uMaterial;
-uniform vec3 cPos; // offset for surrounding chunks to be updated as well.
+uniform uint uMaterial; // material of edit
+uniform int uClick; // -1:place or 1:break
 
 //include shaderheaders/4.3.constantsH.comp
 //include shaderheaders/4.3.functionsH.comp
@@ -42,23 +44,28 @@ void main() {
     uvec3 pp = gl_GlobalInvocationID; // local probe position
     if (clamp(pp, 0, chunkSize-1) != pp) return; // SO IMPORTANT
 
-    vec3 p = pp+cPos;
-    uvec3 lp = getLocalPos(p-center, worldPos); // not centered in dispatch, need to center here for local stuff
+    // gets index within chunk.
+    uint i = pp.x+chunkSize*(pp.y+chunkSize*pp.z);
 
-    setChunkOccupancy(lp, empty); // assume empty for checker (important)
+    // gets global index
+    uint index = slot*chunkProbes+i; // index globally
 
-    float nd = getEdit(p-uPos, uType, uSize); // gets new distance
-    float od = getProbe(lp); // gets current distance
+    float nd = getEdit(vec3(pp)+uPos, uType, uSize); // gets new distance
+    float od = getProbe(index); // gets current distance
+
+    // sets chunk to index if anything is solid within
+    //if (min(nd,od)<=e) indexData[cIndex] = slot; // not doing atm
     
+    // applies edits
     if (uClick == -1) {
         if (nd<od) { // placing
-            setMaterial(lp,uMaterial);
-            setProbe(lp,nd);
+            setMaterial(index,uMaterial);
+            setProbe(index,nd);
         }
     } else {
         if (-nd>od) { // breaking
             //setMaterial(lp,uMaterial);
-            setProbe(lp,-nd);
+            setProbe(index,-nd);
         }
     }
 

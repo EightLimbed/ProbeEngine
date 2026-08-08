@@ -20,7 +20,7 @@ layout(std430, binding = 2) buffer IndexData {
 
 // parameters
 uniform uint slot; // slot in buffers to generate at
-uniform uint cIndex;
+uniform uint cIndex; // chunk index that stores slot
 uniform vec3 cPos; // global position for generation
 
 float smin(float a, float b, float k) {
@@ -98,17 +98,18 @@ void main() {
     vec3 p = vec3(pp)+cPos; // global position
 
     // gets terrain
-    float d = terrain(p, 0.04, 8, 2560.0, 1280.0);
+    float d = terrain(p, 0.04, 7, 2560.0, 1280.0);
     uint mat = material(p);
 
     // sets chunk to index if anything is solid within
-    if (d<=0.0) indexData[cIndex] = slot;
+    if (d<=e) indexData[cIndex] = slot;
 
     // gets index within chunk.
     uint i = pp.x+chunkSize*(pp.y+chunkSize*pp.z);
 
     // sets data at index
     uint index = slot*chunkProbes+i; // index globally
+    
     setMaterial(index,mat);
     setProbe(index,d);
 }

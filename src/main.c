@@ -23,9 +23,9 @@ GLuint screenTex; // screen
 // chunk data stuff
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 24; // world size in chunks, odd number breaks edits?
+const uint viewSize = 48; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
-const uint alloted = viewChunks*chunkProbes/2;
+const uint alloted = viewChunks*chunkProbes/6;
 const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
@@ -59,7 +59,7 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {center,0.0,center};
+  {vec3 pos = {0.0,0.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
@@ -85,8 +85,8 @@ int main() {
   }
 
   // update shader
-  //shaderCompile(&UpdatesID, GL_COMPUTE_SHADER, "shaders/4.3.updates.comp");
-  //UpdatesID = linkComputeShader(UpdatesID);
+  shaderCompile(&UpdatesID, GL_COMPUTE_SHADER, "shaders/4.3.updates.comp");
+  UpdatesID = linkComputeShader(UpdatesID);
 
   // terrain gen shader
   shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
@@ -107,7 +107,6 @@ int main() {
   // generate terrain
   resetChunks();
   genSpawnChunks();
-  generateChunk(player.pos);
   //checkSpawnChunks(sp);
 
   // frame time
@@ -148,8 +147,8 @@ int main() {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
     // terrain updates
-    if (player.mousePress != 0) {
-        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
+    if (player.mouseClick != 0) {
+        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
         applyUpdate(target, player.mousePress, 1, 6.0, 7);
     }
     //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);
