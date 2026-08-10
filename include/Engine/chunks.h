@@ -73,8 +73,8 @@ void generateChunk(vec3 cPos) {
     if (indexData[cIndex] != empty) {
         // essentially gets the slot that that chunk index was assigned
         slotOccupancy[indexData[cIndex]] = 0u; // empty old slot this chunk was filling
-        indexData[cIndex] = empty; // assume chunk is empty for now
     }
+    indexData[cIndex] = empty; // assume chunk is empty for now
 
     // find an empty chunk, and go there
     uint slot = empty; // if slot stays empty, don't generate
@@ -106,35 +106,34 @@ void generateChunk(vec3 cPos) {
 void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint material) {
     // get current chunk
     uvec3 lp = getLocalPos(subtract_f3(cPos,worldPos));
-    //uvec3 lpp = getLocalPos(subtract_f3(worldPos, (vec3){center,center,center}));
-    //printf("Player lp: (%u,%u,%u), Update lp: (%u,%u,%u).\n",lpp.x,lpp.y,lpp.z,lp.x,lp.y,lp.z);
+    printf("Update lp: (%u,%u,%u), ",lp.x,lp.y,lp.z);
     uint cIndex = posToChunkIndex(lp);
 
     uint slot = empty;
     if (indexData[cIndex] != empty) {
         slot = indexData[cIndex]; // get old chunk slot to edit if exists
-        printf("Slot for chunk already exists: ");
+        printf("Slot for chunk already exists, ");
     }
 
     else for (uint i = 0u; i < viewChunks; i++) { // otherwise find empty slot for one
         if (slotOccupancy[i] == 0u) { // if empty chunk found, set slot.
             slot = i;
             slotOccupancy[i] = 1u; // flag chunk as full
-            printf("Needed to find slot for chunk: ");
+            printf("Needed to find slot for chunk, ");
             break;
         }
     }
     printf("Using slot %u at %u chunk index.\n",slot, cIndex);
     
-    indexData[cIndex] = slot; // assume chunk gets filled
+    //indexData[cIndex] = slot; // assume chunk gets filled
 
     // generates chunk, which also checks if chunk is full and sets its slot
     glUseProgram(UpdatesID);
 
     shaderSetUint(UpdatesID, "slot", slot); // set slot
-    //shaderSetUint(UpdatesID, "cIndex", cIndex); // set chunk index, no need to set if assuming full from edits
+    shaderSetUint(UpdatesID, "cIndex", cIndex); // set chunk index, no need to set if assuming full from edits
 
-    shaderSetVec3(UpdatesID, "uPos", subtract_f3(cPos, target)); // pass in global update position
+    shaderSetVec3(UpdatesID, "uPos", subtract_f3(cPos, target)); // pass in local update position
     shaderSetInt(UpdatesID, "uClick", click);
     shaderSetUint(UpdatesID, "uType", type);
     shaderSetFloat(UpdatesID, "uSize", size);
@@ -143,6 +142,8 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     createFenceGPU();
+
+    indexData[cIndex] = slot; // assume chunk gets filled
     
     if (indexData[cIndex] == empty) slotOccupancy[slot] = 0u; // if chunk not filled keep found slot empty
 }
@@ -224,13 +225,18 @@ void shiftChunks(ivec3 shift) {
 // applies updates when necessary
 // takes global position of update, and properties of it
 void applyUpdate(vec3 target, int click, uint type, float size, uint material) {
+    uint count = 0u;
     for (int x = -1; x < 2; x++) 
     for (int y = -1; y < 2; y++)
     for (int z = -1; z < 2; z++) {
         vec3 offset = {(float)x,(float)y,(float)z};
-        target = subtract_f3(target, (vec3){center,center,center});
-        vec3 cPos = add_f3(getChunkPos(target),multiply_f3xf(offset, (float)chunkSize));
-        updateChunk(target, cPos, click, type, size, material); // updates chunk at global position
+        vec3 ctarget = subtract_f3(target, (vec3){center,center,center}); // centered target
+        vec3 cPos = add_f3(getChunkPos(ctarget),multiply_f3xf(offset, (float)chunkSize));
+        printf("Chunk %u ", count);
+        updateChunk(ctarget, cPos, click, type, size, material); // updates chunk at global position
+        //printf("Offset: (%f,%f,%f)",cPos.x,cPos.y,cPos.z);
+        count ++;
     }
     printChunkData();
+    printf("\n");
 }

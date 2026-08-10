@@ -51,10 +51,11 @@ void main() {
     uint index = slot*chunkProbes+i; // index globally
 
     float nd = getEdit(vec3(pp)+uPos, uType, uSize); // gets new distance
+    if (indexData[cIndex] == empty) setProbe(index,32.0); // empties chunk if necessary
     float od = getProbe(index); // gets current distance
 
     // sets chunk to index if anything is solid within
-    //if (min(nd,od)<=e) indexData[cIndex] = slot; // not doing atm
+    //if (min(od,nd)<=e) indexData[cIndex] = slot;
     
     // applies edits
     if (uClick == -1) {

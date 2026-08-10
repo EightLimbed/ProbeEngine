@@ -23,9 +23,9 @@ GLuint screenTex; // screen
 // chunk data stuff
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 48; // world size in chunks, odd number breaks edits?
+const uint viewSize = 16; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
-const uint alloted = viewChunks*chunkProbes/6;
+const uint alloted = viewChunks*chunkProbes/2;
 const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
@@ -148,7 +148,7 @@ int main() {
 
     // terrain updates
     if (player.mouseClick != 0) {
-        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,12.0));
+        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
         applyUpdate(target, player.mousePress, 1, 6.0, 7);
     }
     //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);
