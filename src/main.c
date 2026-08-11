@@ -21,11 +21,12 @@ GLuint ResetID; // index occupancy resetter
 GLuint screenTex; // screen
 
 // chunk data stuff
+const uint cut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 16; // world size in chunks, odd number breaks edits?
+const uint viewSize = 24; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
-const uint alloted = viewChunks*chunkProbes/2;
+const uint alloted = viewChunks*chunkProbes/cut;
 const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
@@ -38,7 +39,7 @@ GLuint ssbo1ID; // material data
 size_t ssbo1Size = (sizeof(GLuint)*alloted+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
 GLuint ssbo2ID; // chunk bitmask data,
-size_t ssbo2Size = (sizeof(GLuint)*viewChunks); // index data
+size_t ssbo2Size = (sizeof(GLuint)*(viewChunks+1)); // index data, +1 for empty and full flag for chunks, start at 0 (empty), set to 1 if full found, 2 if empty found, and 3 if both
 uint* indexData;
 
 // functions
@@ -147,7 +148,7 @@ int main() {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
     // terrain updates
-    if (player.mouseClick != 0) {
+    if (player.mousePress != 0) {
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
         applyUpdate(target, player.mousePress, 1, 6.0, 7);
     }

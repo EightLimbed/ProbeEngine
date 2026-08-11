@@ -68,7 +68,7 @@ void setMaterial(uint index, uint m) {
 // gets probe with 8 bit packing
 float getProbe(uint index) {
     //uint index = posToIndex(lp);
-    if (index == empty) return e; // safety for empties
+    if (index == empty) return 1.0; // safety for empties, 1.0 seems to work, likely because chunk clamping off by around this
 
     uint uintIndex = index >> 2u;
     uint subIndex = index & 3u;
@@ -85,4 +85,16 @@ uint getMaterial(uint index) {
     uint bitShift = (index & 7u) * 4u; // shift amount
 
     return (materialData[uintIndex] >> bitShift) & 0xFu;
+}
+
+// sets chunk flag, uses last index of indexData to store
+// start at 0 (empty), set to 1 if full found, 2 if empty found, and 3 if both
+void updateStoreFlag(float d) {
+    if (indexData[viewChunks] == 0) {
+        if (d<=e) indexData[viewChunks] = 1;
+        else indexData[viewChunks] = 2;
+    } else {
+        if (d<=e && indexData[viewChunks] == 2) indexData[viewChunks] = 3; // if empty, and full found.
+        else if (d>e && indexData[viewChunks] == 1) indexData[viewChunks] = 3; // if full, and empty found.
+    }
 }
