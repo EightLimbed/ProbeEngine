@@ -51,11 +51,9 @@ void main() {
     uint index = slot*chunkProbes+i; // index globally
 
     float nd = getEdit(vec3(pp)+uPos, uType, uSize); // gets new distance
-    if (indexData[cIndex] == empty) setProbe(index,uSize); // empties chunk if necessary, need to get actual distances eventually with cpu side dispatch, set distance is hacky
     float od = getProbe(index); // gets current distance
 
     // sets chunk to index if anything is solid within
-    //updateStoreFlag(nd);
     
     // applies edits
     if (uClick == -1) {
@@ -63,12 +61,12 @@ void main() {
             setMaterial(index,uMaterial);
             setProbe(index,nd);
         }
+        updateStoreFlag(min(nd,od));
     } else {
         if (-nd>od) { // breaking
             //setMaterial(lp,uMaterial);
             setProbe(index,-nd);
         }
+        updateStoreFlag(max(-nd,od));
     }
-
-    // maybe implement neighbor check for unreset probes
 }

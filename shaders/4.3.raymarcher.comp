@@ -150,7 +150,7 @@ void main() {
 
         // distance to surface
         float d = smoothDist(p);
-        if (cd<d) {
+        if (cd+e<d) {
             collect += 0.1;
             collect = min(collect, 0.5);
         }

@@ -22,6 +22,14 @@ vec3 add_f3(vec3 a, vec3 b) {
   return c;
 }
 
+vec3 add_f3xf(vec3 a, float b) {
+  vec3 c;
+  c.x = a.x+b;
+  c.y = a.y+b;
+  c.z = a.z+b;
+  return c;
+}
+
 vec3 subtract_f3(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.x-b.x;

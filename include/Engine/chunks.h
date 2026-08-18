@@ -67,11 +67,12 @@ void resetChunks() {
     createFenceGPU();
 }
 
-void dispatchChunk(vec3 cPos, uint slot, uint cIndex) {
+void getChunk(vec3 cPos, uint slot, uint cIndex) {
+    indexData[viewChunks] = 0; // reset flag
+    // need to check if saved before loading it
     glUseProgram(TerrainID);
-    shaderSetVec3(TerrainID, "cPos", cPos);
+    shaderSetVec3(TerrainID, "cPos", cPos); // set position
     shaderSetUint(TerrainID, "slot", slot); // set slot
-    shaderSetUint(TerrainID, "cIndex", cIndex); // set chunk index
 
     glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -102,11 +103,10 @@ void generateChunk(vec3 cPos) {
             break;
         }
     } if (slot == empty) return;  // if no space found, do nothing
-    indexData[viewChunks] = 0; // reset flag
 
     // generates chunk, which also checks if chunk is full and sets its slot
     
-    dispatchChunk(cPos, slot, cIndex);
+    getChunk(cPos, slot, cIndex);
     createFenceGPU();
 
     // last index used as flag for fully empty or full.
@@ -123,23 +123,36 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     uint cIndex = posToChunkIndex(lp);
 
     uint slot = empty;
-    if (indexData[cIndex] != empty) {
-        slot = indexData[cIndex]; // get old chunk slot to edit if exists
+    if (indexData[cIndex] != empty) { // get old chunk slot to edit if loaded
+        slot = indexData[cIndex];
+        indexData[viewChunks] = 3; // reset flag
         //printf("Slot for chunk already exists, ");
     }
 
-    else for (uint i = 0u; i < viewChunks/cut; i++) { // otherwise find empty slot for one
-        if (slotOccupancy[i] == 0u) { // if empty chunk found, set slot.
-            slot = i;
-            slotOccupancy[i] = 1u; // flag chunk as full
-            //dispatchChunk(cPos, slot, cIndex); // reset chunk
+    else {
+    uint hash = hash_uint(cIndex); // hash for easier search
+    for (uint i = 0u; i < viewChunks/cut; i++) { // otherwise find empty slot for one
+        uint index = (i+hash)%(viewChunks/cut); // modulate within alloted space
+        if (slotOccupancy[index] == 0u) { // if empty chunk found, set slot.
+            slot = index;
+            slotOccupancy[slot] = 1u; // flag chunk as full
+            indexData[viewChunks] = 0; // reset flag
+
+            getChunk(add_f3xf(cPos, center*2), slot, cIndex); // wtaf why do I need to add entire view of offset here
+            createFenceGPU();
+            
+            //printf("Chunk gotten flag: %u\n",indexData[viewChunks]);
             //printf("Needed to find slot for chunk, ");
             break;
         }
-    } if (slot == empty) return; // if no space found, do nothing
+    } if (slot == empty) return; // do nothing if no slot found
+    }
+
+    //indexData[viewChunks] = 0; // reset flag
+
     //printf("Using slot %u at %u chunk index.\n",slot, cIndex);
 
-    // generates chunk, which also checks if chunk is full and sets its slot
+    //generates chunk, which also checks if chunk is full and sets its slot
     glUseProgram(UpdatesID);
 
     shaderSetUint(UpdatesID, "slot", slot); // set slot
@@ -154,27 +167,18 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     createFenceGPU();
+    
 
-    indexData[cIndex] = slot; // assume chunk gets filled, do this after compute shader to ensure clearing functions
-
-    // if (indexData[viewChunks] == 3) indexData[cIndex] = slot;
- 
-    // else slotOccupancy[slot] = 0u; // if chunk not filled keep found slot empty
-}
-
-void printChunkData() {
-    uint r = 0u;
-    uint p = 0u;
-    for (uint i = 0; i < viewChunks; i++) {
-        uint reduced = indexData[i]/chunkProbes;
-        if (indexData[i] == empty) r++;
-        if (slotOccupancy[i] == 0u) p++;
-        //if (indexData[i] == empty)  printf("Chunk %u slot is empty\n", i);
-        //else printf("Chunk %u slot is: %u, with difference of: %u\n", i, reduced, i-reduced);
+    if (indexData[viewChunks] == 3) {
+        slotOccupancy[slot] = 1u; // if chunk filled, makes slot full
+        indexData[cIndex] = slot;
     }
-
-    if (viewChunks-r > 0u) printf("%u empties taking %u slots out of %u chunks (1 in %u full).\n",r,p,viewChunks,viewChunks/(viewChunks-r));
-    else printf("No chunks full.\n");
+ 
+    else {
+        slotOccupancy[slot] = 0u; // if chunk not filled keep found slot empty
+        //if (indexData[cIndex]!=empty) printf("oops: %u\n",indexData[viewChunks] );
+        indexData[cIndex] = empty;
+    }
 }
 
 // need function for the first pass upon loading where you assign a index to every chunk position (will do grid with posToIndex function)
@@ -195,9 +199,6 @@ void genSpawnChunks() {
         generateChunk(cPos); // generates chunk at global position
     }
     //printf("Took %f seconds to generate spawn chunks.\n", glfwGetTime()-time);
-
-    // checks
-    printChunkData();
 }
 
 // 'shifts' chunks when player moves, localPos actually handles shifting, this just regenerates new chunks.
@@ -232,8 +233,6 @@ void shiftChunks(ivec3 shift) {
             generateChunk(cPos);
         }
     }
-    //printChunkData();
-
 
     // apply edits saved
 }
@@ -253,6 +252,4 @@ void applyUpdate(vec3 target, int click, uint type, float size, uint material) {
         //printf("Offset: (%f,%f,%f)",cPos.x,cPos.y,cPos.z);
         count ++;
     }
-    printChunkData();
-    printf("\n");
 }

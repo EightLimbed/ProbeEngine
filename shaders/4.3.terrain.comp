@@ -20,7 +20,6 @@ layout(std430, binding = 2) buffer IndexData {
 
 // parameters
 uniform uint slot; // slot in buffers to generate at
-uniform uint cIndex; // chunk index that stores slot
 uniform vec3 cPos; // global position for generation
 
 float smin(float a, float b, float k) {
@@ -89,7 +88,7 @@ float terrain(vec3 p, float a, uint layers, float s, float l) {
 }
 
 uint material(vec3 p) {
-    return uint(abs(p.y))%7u;
+    return uint(abs(p.y)+abs(p.x))%7u;
 }
 
 void main() {
