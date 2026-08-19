@@ -35,8 +35,8 @@ extern GLuint UpdatesID;
 // index occupancy resetter
 extern GLuint ResetID;
 
-// empty chunk ID
-const uint empty = 0xFFFFFFFFu; // flag for if chunk isn't loaded
+// unloaded chunk ID
+const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
 
 vec3 getChunkPos(vec3 p) {
     float cs = (float)chunkSize;
@@ -60,7 +60,7 @@ void resetChunks() {
     // create slotOccupancy map
     free(slotOccupancy);
     slotOccupancy = calloc(viewChunks/cut,sizeof(uint));
-    // set all indexes to empty
+    // set all indexes to unloaded
     glUseProgram(ResetID);
     glDispatchCompute((viewSize+3)/4,(viewSize+3)/4,(viewSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -78,31 +78,31 @@ void getChunk(vec3 cPos, uint slot, uint cIndex) {
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
-// generates chunk at global chunk position, automatically puts it at nearest empty chunk index.
+// generates chunk at global chunk position, automatically puts it at nearest unloaded chunk index.
 void generateChunk(vec3 cPos) {
     // get current chunk
     uvec3 lp = getLocalPos(subtract_f3(cPos, worldPos));
     uint cIndex = posToChunkIndex(lp);
 
     // make sure old chunk gets overwritten
-    if (indexData[cIndex] != empty) {
+    if (indexData[cIndex] != unloaded) {
         // essentially gets the slot that that chunk index was assigned
         slotOccupancy[indexData[cIndex]] = 0u; // empty old slot this chunk was filling
-        indexData[cIndex] = empty; // assume chunk is empty for now
+        indexData[cIndex] = unloaded; // assume chunk is unloaded for now
     }
 
-    // find an empty chunk, and go there
-    uint slot = empty; // if slot stays empty, don't generate
+    // find an unloaded chunk, and go there
+    uint slot = unloaded; // if slot stays unloaded, don't generate
     uint hash = hash_uint(cIndex); // hash for easier search
     for (uint i = 0u; i < viewChunks/cut; i++) {
         uint index = (i+hash)%(viewChunks/cut); // modulate within alloted space
-        if (slotOccupancy[index] == 0u) { // if empty chunk found, set slot.
+        if (slotOccupancy[index] == 0u) { // if unloaded chunk found, set slot.
             slot = index;
             slotOccupancy[index] = 1u; // flag chunk as full
             //printf("%u steps required for chunk.\n", i);
             break;
         }
-    } if (slot == empty) return;  // if no space found, do nothing
+    } if (slot == unloaded) return;  // if no space found, do nothing
 
     // generates chunk, which also checks if chunk is full and sets its slot
     
@@ -112,7 +112,7 @@ void generateChunk(vec3 cPos) {
     // last index used as flag for fully empty or full.
     if (indexData[viewChunks] == 3) indexData[cIndex] = slot;
  
-    else slotOccupancy[slot] = 0u; // if chunk not filled keep found slot empty
+    else slotOccupancy[slot] = 0u; // if chunk not filled keep found slot unloaded
 }
 
 // updates chunk at position
@@ -122,8 +122,8 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     //printf("Update lp: (%u,%u,%u), ",lp.x,lp.y,lp.z);
     uint cIndex = posToChunkIndex(lp);
 
-    uint slot = empty;
-    if (indexData[cIndex] != empty) { // get old chunk slot to edit if loaded
+    uint slot = unloaded;
+    if (indexData[cIndex] != unloaded) { // get old chunk slot to edit if loaded
         slot = indexData[cIndex];
         indexData[viewChunks] = 3; // reset flag
         //printf("Slot for chunk already exists, ");
@@ -131,9 +131,9 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
 
     else {
     uint hash = hash_uint(cIndex); // hash for easier search
-    for (uint i = 0u; i < viewChunks/cut; i++) { // otherwise find empty slot for one
+    for (uint i = 0u; i < viewChunks/cut; i++) { // otherwise find unloaded slot for one
         uint index = (i+hash)%(viewChunks/cut); // modulate within alloted space
-        if (slotOccupancy[index] == 0u) { // if empty chunk found, set slot.
+        if (slotOccupancy[index] == 0u) { // if unloaded chunk found, set slot.
             slot = index;
             slotOccupancy[slot] = 1u; // flag chunk as full
             indexData[viewChunks] = 0; // reset flag
@@ -145,7 +145,7 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
             //printf("Needed to find slot for chunk, ");
             break;
         }
-    } if (slot == empty) return; // do nothing if no slot found
+    } if (slot == unloaded) return; // do nothing if no slot found
     }
 
     //indexData[viewChunks] = 0; // reset flag
@@ -175,9 +175,9 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     }
  
     else {
-        slotOccupancy[slot] = 0u; // if chunk not filled keep found slot empty
-        //if (indexData[cIndex]!=empty) printf("oops: %u\n",indexData[viewChunks] );
-        indexData[cIndex] = empty;
+        slotOccupancy[slot] = 0u; // if chunk not filled keep found slot unloaded
+        //if (indexData[cIndex]!=unloaded) printf("oops: %u\n",indexData[viewChunks] );
+        indexData[cIndex] = unloaded;
     }
 }
 
@@ -186,7 +186,7 @@ void genSpawnChunks() {
     //float time = glfwGetTime();
     // early out if incorrect initialization
     for (uint i = 0u; i < viewChunks; i--) {
-        if (indexData[i] != empty) {
+        if (indexData[i] != unloaded) {
             printf("Incorrect Initialization at: %u\n", i);
             return;
         }

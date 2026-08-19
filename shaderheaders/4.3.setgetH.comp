@@ -25,7 +25,7 @@ uint posToChunkIndex(uvec3 lp) {
 // takes position in chunk, and uses chunk data previously set to get index.
 uint posToIndex(uvec3 lp) {
     uint slot = indexData[posToChunkIndex(lp)];
-    if (slot == empty) return empty; // early out for empty indexes
+    if (slot == unloaded) return unloaded; // early out for unloaded indexes
 
     // local positioning
     uvec3 pp = lp % chunkSize;
@@ -68,7 +68,7 @@ void setMaterial(uint index, uint m) {
 // gets probe with 8 bit packing
 float getProbe(uint index) {
     //uint index = posToIndex(lp);
-    if (index == empty) return 1.0; // safety for empties, 1.0 seems to work, likely because chunk clamping off by around this
+    if (index == unloaded) return 1.0; // safety for empties, 1.0 seems to work, likely because chunk clamping off by around this
 
     uint uintIndex = index >> 2u;
     uint subIndex = index & 3u;
@@ -88,7 +88,7 @@ uint getMaterial(uint index) {
 }
 
 // sets chunk flag, uses last index of indexData to store
-// start at 0 (empty), set to 1 if full found, 2 if empty found, and 3 if both
+// start at 0 (unloaded), set to 1 if full found, 2 if empty found, and 3 if both
 // play with different thresholds, for example, dMin got rid of gaps in world.
 void updateStoreFlag(float d) {
     if (indexData[viewChunks] == 0) {

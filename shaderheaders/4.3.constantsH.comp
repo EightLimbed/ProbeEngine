@@ -7,7 +7,7 @@ const float center = float(viewSize)/2.0*float(chunkSize);
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
 const uint viewChunks = viewSize*viewSize*viewSize;
 
-const uint empty = 0xFFFFFFFFu; // flag for if chunk isn't loaded
+const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
 
 const int raySteps = 160;
 const float e = 0.01; // max precision of 8 bit float
