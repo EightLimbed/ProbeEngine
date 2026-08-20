@@ -24,7 +24,7 @@ uint posToChunkIndex(uvec3 lp) {
 
 // takes position in chunk, and uses chunk data previously set to get index.
 uint posToIndex(uvec3 lp) {
-    uint slot = indexData[posToChunkIndex(lp)];
+    uint slot = chunkData[posToChunkIndex(lp)];
     if (slot == unloaded) return unloaded; // early out for unloaded indexes
 
     // local positioning
@@ -87,20 +87,19 @@ uint getMaterial(uint index) {
     return (materialData[uintIndex] >> bitShift) & 0xFu;
 }
 
-// sets chunk flag, uses last index of indexData to store
+// sets chunk flag, uses last index of chunkData to store
 // start at 0 (unloaded), set to 1 if full found, 2 if empty found, and 3 if both
 // play with different thresholds, for example, dMin got rid of gaps in world.
-void updateStoreFlag(float d) {
-    if (indexData[viewChunks] == 0) {
-        if (d<=0.0) indexData[viewChunks] = 1;
-        else if (d>dMin) indexData[viewChunks] = 2;
-    } else {
-        if (d<=0.0 && indexData[viewChunks] == 2) indexData[viewChunks] = 3; // if empty, and full found.
-        else if (d>dMin && indexData[viewChunks] == 1) indexData[viewChunks] = 3; // if full, and empty found.
-    }
-    // if (d <= e) {
-    //     indexData[viewChunks] = indexData[viewChunks] | 1u;
-    // } else if (d > dMin) {
-    //     indexData[viewChunks] = indexData[viewChunks] | 2u;
-    // }
+void updateStoreFlag(float d, uint slot) {
+    uint index = viewChunks+slot;
+    if (chunkData[index] == generating) {
+        if (d<=0.0) chunkData[index] = full;
+        else if (d>dMin) chunkData[index] = empty;
+    } 
+    else if (d<=0.0 && chunkData[index] == empty) chunkData[index] = stored; // if empty, and full found.
+    else if (d>dMin && chunkData[index] == full) chunkData[index] = stored; // if full, and empty found.
+}
+
+uint getStoreFlag(uint slot) {
+    return chunkData[viewChunks+slot];
 }

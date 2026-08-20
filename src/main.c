@@ -21,10 +21,10 @@ GLuint ResetID; // index occupancy resetter
 GLuint screenTex; // screen
 
 // chunk data stuff
-const uint cut = 6; // amount to divide max memory by
+const uint cut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 24; // world size in chunks, odd number breaks edits?
+const uint viewSize = 32; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
 const uint alloted = viewChunks*chunkProbes/cut;
 const float axisSize = (float)(chunkSize*viewSize);
@@ -39,8 +39,8 @@ GLuint ssbo1ID; // material data
 size_t ssbo1Size = (sizeof(GLuint)*alloted+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
 GLuint ssbo2ID; // chunk bitmask data,
-size_t ssbo2Size = (sizeof(GLuint)*(viewChunks+1)); // index data, +1 for empty and full flag for chunks, start at 0 (empty), set to 1 if full found, 2 if empty found, and 3 if both
-uint* indexData;
+size_t ssbo2Size = (sizeof(GLuint)*(viewChunks)*2); // 0-viewChunks holds slots, anything past holds flags
+uint* chunkData;
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -48,7 +48,6 @@ void processInput(GLFWwindow *window);
 void updateSettings();
 
 int main() {
-
   // creates a window
   GLFWwindow *window = createWindow(screenWidth, screenHeight, "I don't know");
   // temp
@@ -69,7 +68,7 @@ int main() {
   //surfaceData = (uint *)createAndPersistentlyMapSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
-  indexData = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // index data
+  chunkData = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // index data
   //createSSBO(ssbo2ID, ssbo2Size, 2); // chunk occupancy data
 
   // loads shaders
@@ -176,6 +175,7 @@ int main() {
   }
 
   // end
+  printf("\n");
   glfwDestroyWindow(window);
   glfwTerminate();
   return 0;

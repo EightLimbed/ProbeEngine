@@ -2,8 +2,9 @@
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
 
-layout(std430, binding = 2) buffer IndexData {
-    uint indexData[];
+// 0-viewChunks is slots, viewChunks+ is flags
+layout(std430, binding = 2) buffer ChunkData {
+    uint chunkData[];
 };
 
 //include shaderheaders/4.3.constantsH.comp
@@ -15,5 +16,6 @@ void main() {
 
     uint index = cp.x+viewSize*(cp.y+viewSize*cp.z);
 
-    indexData[index] = unloaded;
+    chunkData[index] = unloaded;
+    chunkData[index+viewChunks] = empty;
 }

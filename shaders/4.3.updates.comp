@@ -10,8 +10,8 @@ layout(std430, binding = 1) buffer MaterialData {
     uint materialData[];
 };
 
-layout(std430, binding = 2) buffer IndexData {
-    uint indexData[];
+layout(std430, binding = 2) buffer ChunkData {
+    uint chunkData[];
 };
 
 uniform uint slot; // slot in buffers to generate at
@@ -61,12 +61,12 @@ void main() {
             setMaterial(index,uMaterial);
             setProbe(index,nd);
         }
-        updateStoreFlag(min(nd,od));
+        updateStoreFlag(min(nd,od), slot);
     } else {
         if (-nd>od) { // breaking
             //setMaterial(lp,uMaterial);
             setProbe(index,-nd);
         }
-        updateStoreFlag(max(-nd,od));
+        updateStoreFlag(max(-nd,od), slot);
     }
 }

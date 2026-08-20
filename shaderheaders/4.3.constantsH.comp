@@ -1,14 +1,23 @@
-// common constants
+// world settings
 const uint chunkSize = 32u;
-const uint viewSize = 24u;
+const uint viewSize = 32u;
 
+// world data
 const uint axisSize = (chunkSize*viewSize);
 const float center = float(viewSize)/2.0*float(chunkSize);
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
 const uint viewChunks = viewSize*viewSize*viewSize;
 
-const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
+// flag for if chunk isn't loaded
+const uint unloaded = 0xFFFFFFFFu;
 
+// enum flags for chunk state
+const uint empty = 3u; // unloaded
+const uint full = 2u; // unloaded
+const uint stored = 1u; // loaded
+const uint generating = 0u; // currently generating, skip
+
+// rendering constants
 const int raySteps = 160;
 const float e = 0.01; // max precision of 8 bit float
 const float dMin = -sqrt(2.0); // important to allow negative sdf distance data encoding.

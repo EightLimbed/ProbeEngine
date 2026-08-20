@@ -14,6 +14,10 @@ typedef struct {
   int x,y,z;
 } ivec3;
 
+typedef struct {
+  uint x,y;
+} uvec2;
+
 vec3 add_f3(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.x+b.x;
