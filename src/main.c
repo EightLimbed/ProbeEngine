@@ -25,19 +25,19 @@ GLuint screenTex; // screen
 const uint cut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 32; // world size in chunks, odd number breaks edits?
+const uint viewSize = 48; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
-const uint alloted = viewChunks*chunkProbes/cut;
+const uint allotedChunks = viewChunks/cut;
 const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
 vec3 worldPos; // position of world, for local positioning
 
 GLuint ssbo0ID; // probe data
-size_t ssbo0Size = (sizeof(GLuint)*alloted+3)/4; // /4 for bitpacking, 8 bit floats
+size_t ssbo0Size = (sizeof(GLuint)*allotedChunks*chunkProbes+3)/4; // /4 for bitpacking, 8 bit floats
 uint* surfaceData; // chunk mapping persistently mapped data pointer
 
 GLuint ssbo1ID; // material data
-size_t ssbo1Size = (sizeof(GLuint)*alloted+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
+size_t ssbo1Size = (sizeof(GLuint)*allotedChunks*chunkProbes+7)/8; // /8 for bitpacking, 4 bit floats, 16 material types, increasable later
 
 GLuint ssbo2ID; // chunk bitmask data,
 size_t ssbo2Size = (sizeof(GLuint)*(viewChunks)*2); // 0-viewChunks holds slots, anything past holds flags
@@ -112,7 +112,6 @@ int main() {
   // generate terrain
   resetChunks();
   genSpawnChunks();
-  //checkSpawnChunks(sp);
 
   // frame time
   float deltaTime = 0.0f;
@@ -158,15 +157,17 @@ int main() {
     }
     //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);
 
+    // terrain gen
     if (!equal_f3(worldPos, owp)) {
-        //generateChunk(vec3 pos)
         ivec3 shift = {(int)(worldPos.x-owp.x)/(int)chunkSize,
                        (int)(worldPos.y-owp.y)/(int)chunkSize,
                        (int)(worldPos.z-owp.z)/(int)chunkSize};
-        //printf("Shifted: (%i, %i, %i)\n", shift.x, shift.y, shift.z);
         shiftChunks(shift);
     }
     owp = worldPos;
+
+    // apply terrain gen
+    followChunkQueue();
 
     // screen
     glUseProgram(ScreenID);

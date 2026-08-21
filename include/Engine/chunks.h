@@ -7,6 +7,7 @@
 
 // memory data
 extern const uint cut;
+extern const uint allotedChunks;
 
 // world specs
 extern const uint chunkSize;
@@ -32,8 +33,11 @@ extern GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
 extern GLuint UpdatesID; // updater
 extern GLuint ResetID; // index occupancy resetter
 
-// chunk gen queue
-vec3* chunkQueue; // list of positions for chunks, each frame 
+// chunk gen queue, sized to allotedChunks
+vec3* chunkQueue; // list of positions for chunks, each frame generate as many as possible while maintaining fps
+uint queueHead = 0u;
+uint queueTail = 0u;
+uint queueSize = 0u;
 
 // unloaded chunk ID
 const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
@@ -88,11 +92,28 @@ uint posToChunkIndex(uvec3 lp) {
 
 // gets data structures ready for chunks
 void resetChunks() {
-    // set all indexes to unloaded
+    // reset queue
+    chunkQueue = calloc(viewChunks, sizeof(vec3)); // empty chunkQueue
+
+    // set all indexes and flags to unloaded
     glUseProgram(ResetID);
     glDispatchCompute((viewSize+3)/4,(viewSize+3)/4,(viewSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     createFenceGPU();
+}
+
+// adds value to end of queue
+void enqueueChunk(vec3 cPos) {
+    chunkQueue[queueHead] = cPos;
+    queueHead = (queueHead+1) % (viewChunks);
+    queueSize ++;
+}
+
+// removes value at start of queue
+void dequeueChunk() {
+    //chunkQueue[queueTail] = (vec3){0.0,0.0,0.0}; // reset value
+    queueTail = (queueTail+1) % (viewChunks); // wrap
+    queueSize --;
 }
 
 void getChunk(vec3 cPos, uint slot, uint cIndex) {
@@ -118,10 +139,6 @@ void updateOccupancy(uint slot, uint cIndex) {
 
 // generates chunk at global chunk position, automatically puts it at nearest unloaded chunk index.
 void generateChunk(vec3 cPos) {
-    // time generation
-    struct timespec start, end;
-    timespec_get(&start, TIME_UTC);
-
     // get current chunk
     uvec3 lp = getLocalPos(subtract_f3(cPos, worldPos));
     uint cIndex = posToChunkIndex(lp);
@@ -136,8 +153,8 @@ void generateChunk(vec3 cPos) {
     // find an unloaded chunk, and go there
     uint slot = unloaded; // if slot stays unloaded, don't generate
     uint hash = hash_uint(cIndex); // hash for easier search
-    for (uint i = 0u; i < viewChunks/cut; i++) {
-        uint index = (i+hash)%(viewChunks/cut); // modulate within alloted space
+    for (uint i = 0u; i < allotedChunks; i++) {
+        uint index = (i+hash)%(allotedChunks); // modulate within allotedChunks space
         if (getFlag(index) == unstored) { // if unloaded chunk found, set slot.
             slot = index;
             setFlag(index,generating); // flag chunk as generating
@@ -150,18 +167,33 @@ void generateChunk(vec3 cPos) {
     
     getChunk(cPos, slot, cIndex);
     updateOccupancy(slot, cIndex);
-    //createFenceGPU();
+}
 
-    // if chunk stored, set its slot
-    //if (getFlag(slot) == stored) setSlot(cIndex,slot);
+void followChunkQueue() {
+    // time setup
+    struct timespec start, end;
+    timespec_get(&start, TIME_UTC);
+    double duration = 0.0;
 
-    // timer again
-    timespec_get(&end, TIME_UTC);
-    double duration = (end.tv_sec - start.tv_sec) + 
-                      (end.tv_nsec - start.tv_nsec) / 1000000000.0;
-    countTime += duration;
-    genCount += 1.0;
-    printf("Current chunk took %f seconds, for an average of %f.\r", duration, countTime/genCount);
+    if (queueSize == 0u) return;
+    uint count = 0u;
+
+    // while still at 60 fps
+    while (count < 400u && queueSize > 0u) {
+        count ++;
+        generateChunk(chunkQueue[queueTail]); // generates chunk last added
+        dequeueChunk(); // removes chunk from queue
+
+        // time check
+        timespec_get(&end, TIME_UTC);
+        duration = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
+        //countTime += duration;
+        //genCount += 1.0;
+        //printf("Current chunk took %f seconds, for an average of %f.\r", duration, countTime/genCount);
+    }
+    if (duration > 1.0/120.0) printf("Stopped to time: %u.\n", count);
+    else if (queueHead == queueTail) printf("Stopped because done %f,%f.\n", duration, 0.01);
+    //printf("Spent %f seconds generating chunks this frame.\n", duration);
 }
 
 // updates chunk at position
@@ -180,8 +212,8 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
 
     else {
     uint hash = hash_uint(cIndex); // hash for easier search
-    for (uint i = 0u; i < viewChunks/cut; i++) { // otherwise find unloaded slot for one
-        uint index = (i+hash)%(viewChunks/cut); // modulate within alloted space
+    for (uint i = 0u; i < allotedChunks; i++) { // otherwise find unloaded slot for one
+        uint index = (i+hash)%(allotedChunks); // modulate within allotedChunks space
         if (getFlag(index) == unstored) { // if unloaded chunk found, set slot.
             slot = index;
 
@@ -238,7 +270,7 @@ void genSpawnChunks() {
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
         vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos); // adding worldPos because generateChunk works on worldPos
-        generateChunk(cPos); // generates chunk at global position
+        enqueueChunk(cPos); // generates chunk at global position
     }
     //printf("Took %f seconds to generate spawn chunks.\n", glfwGetTime()-time);
 }
@@ -252,7 +284,7 @@ void shiftChunks(ivec3 shift) {
             ivec3 ip = {(shift.x>0) ? shift.x*viewSize-1 : 0, y, z}; // need -1, likely because shifting or something idk
             vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
 
-            generateChunk(cPos);
+            enqueueChunk(cPos);
         }
     }
     // shift z
@@ -262,7 +294,7 @@ void shiftChunks(ivec3 shift) {
             ivec3 ip = {x, y, (shift.z>0) ? shift.z*viewSize-1 : 0};
             vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
 
-            generateChunk(cPos);
+            enqueueChunk(cPos);
         }
     }
     // shift y
@@ -272,7 +304,7 @@ void shiftChunks(ivec3 shift) {
             ivec3 ip = {x, (shift.y>0) ? shift.y*viewSize-1 : 0, z};
             vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
 
-            generateChunk(cPos);
+            enqueueChunk(cPos);
         }
     }
 
