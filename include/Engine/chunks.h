@@ -36,10 +36,8 @@ extern GLuint ResetID; // index occupancy resetter
 const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
 
 // enum flags for chunk state
-const uint unstored = 4u; // unloaded
-const uint stored = 3u; // loaded
-const uint empty = 2u; // to be unloaded
-const uint full = 1u; // to be unloaded
+const uint unstored = 2u; // unloaded
+const uint stored = 1u; // loaded
 const uint generating = 0u; // currently generating
 
 // chunk timing average helpers

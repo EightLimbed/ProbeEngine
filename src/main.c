@@ -22,7 +22,7 @@ GLuint ResetID; // index occupancy resetter
 GLuint screenTex; // screen
 
 // chunk data stuff
-const uint cut = 1; // amount to divide max memory by
+const uint cut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
 const uint viewSize = 32; // world size in chunks, odd number breaks edits?

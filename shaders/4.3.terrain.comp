@@ -82,9 +82,9 @@ float terrain(vec3 p, float a, uint layers, float s, float l) {
         l *= 0.5;
     }
     // trees
-    float t = trees(p+vec3(0,-128,0), 64.0, 5.0);
+    //float t = trees(p+vec3(0,-128,0), 64.0, 5.0);
 
-    return min(d,t);
+    return d;
 }
 
 uint material(vec3 p) {

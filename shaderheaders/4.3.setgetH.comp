@@ -87,14 +87,9 @@ uint getMaterial(uint index) {
     return (materialData[uintIndex] >> bitShift) & 0xFu;
 }
 
-// sets chunk flag, uses last index of chunkData to store
-// start at 0 (unloaded), set to 1 if full found, 2 if empty found, and 3 if both
-// play with different thresholds, for example, dMin got rid of gaps in world.
+// sets chunk flag, uses last index of chunkData to store.
 void updateStoreFlag(float d, uint slot) {
-    uint index = viewChunks+slot;
-    if (d<= 3) chunkData[index] |= full; // or with full
-    if (d>= dMin) chunkData[index] |= empty; // or with empty
-    // ends up as 1u, 2u or 3u
+    if (d>dMin && d<e) chunkData[viewChunks+slot] = stored;
 }
 
 uint getStoreFlag(uint slot) {
