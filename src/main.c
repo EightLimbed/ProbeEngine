@@ -154,7 +154,7 @@ int main() {
     // terrain updates
     if (player.mousePress != 0) {
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
-        applyUpdate(target, player.mousePress, 1, 6.0, 7);
+        applyUpdate(target, player.mousePress, 0, 6.0, 7);
     }
     //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);
 

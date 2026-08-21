@@ -32,6 +32,9 @@ extern GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
 extern GLuint UpdatesID; // updater
 extern GLuint ResetID; // index occupancy resetter
 
+// chunk gen queue
+vec3* chunkQueue; // list of positions for chunks, each frame 
+
 // unloaded chunk ID
 const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
 
@@ -167,11 +170,12 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     uvec3 lp = getLocalPos(subtract_f3(cPos,worldPos));
     //printf("Update lp: (%u,%u,%u), ",lp.x,lp.y,lp.z);
     uint cIndex = posToChunkIndex(lp);
-
+    
     uint slot = unloaded;
     if (getSlot(cIndex) != unloaded) { // get old chunk slot to edit if loaded
         slot = getSlot(cIndex);
-        setSlot(cIndex, unloaded);
+        //setSlot(cIndex, unloaded);
+        setFlag(slot, generating); // flag chunk as generating
     }
 
     else {
@@ -182,7 +186,8 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
             slot = index;
 
             getChunk(add_f3xf(cPos, center*2), slot, cIndex); // wtaf why do I need to add entire view of offset here
-            //createFenceGPU(); // do need fence here because I can't dispatch next one without waiting for completion
+            createFenceGPU(); // do need fence here because I can't dispatch next one without waiting for completion
+            setFlag(slot, generating); // flag chunk as generating
             
             //printf("Chunk gotten flag: %u\n",chunkData[viewChunks]);
             //printf("Needed to find slot for chunk, ");
@@ -190,9 +195,6 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
         }
     } if (slot == unloaded) return; // do nothing if no slot found
     }
-
-    //setSlot(cIndex, unloaded); // unset slot because getChunk could set it.
-    setFlag(slot, generating); // flag chunk as generating
 
     //printf("Using slot %u at %u chunk index.\n",slot, cIndex);
 
