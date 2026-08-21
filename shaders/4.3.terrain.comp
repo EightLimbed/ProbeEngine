@@ -20,7 +20,6 @@ layout(std430, binding = 2) buffer ChunkData {
 
 // parameters
 uniform uint slot; // slot in buffers to generate at
-uniform uint cIndex; // chunk index of slot in chunkData
 uniform vec3 cPos; // global position for generation
 
 float smin(float a, float b, float k) {
@@ -83,9 +82,9 @@ float terrain(vec3 p, float a, uint layers, float s, float l) {
         l *= 0.5;
     }
     // trees
-    //float t = trees(p+vec3(0,-128,0), 64.0, 5.0);
+    float t = trees(p+vec3(0,-128,0), 64.0, 5.0);
 
-    return d;
+    return min(d,t);
 }
 
 uint material(vec3 p) {
@@ -101,9 +100,6 @@ void main() {
     float d = terrain(p, 0.04, 7, 2560.0, 1280.0);
     uint mat = material(p);
 
-    // sets chunk flag
-    updateStoreFlag(d, slot);
-
     // gets index within chunk.
     uint i = pp.x+chunkSize*(pp.y+chunkSize*pp.z);
 
@@ -113,6 +109,6 @@ void main() {
     setMaterial(index,mat);
     setProbe(index,d);
 
-    // sets slot if chunk is full
-    if (getStoreFlag(slot) == stored) chunkData[cIndex] = slot;
+    // sets chunk flag
+    updateStoreFlag(d, slot);
 }

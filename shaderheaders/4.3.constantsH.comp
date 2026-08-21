@@ -12,12 +12,14 @@ const uint viewChunks = viewSize*viewSize*viewSize;
 const uint unloaded = 0xFFFFFFFFu;
 
 // enum flags for chunk state
-const uint empty = 3u; // unloaded
-const uint full = 2u; // unloaded
-const uint stored = 1u; // loaded
-const uint generating = 0u; // currently generating, skip
+const uint unstored = 4u; // unloaded
+const uint stored = 3u; // loaded
+const uint empty = 2u; // to be unloaded
+const uint full = 1u; // to be unloaded
+const uint generating = 0u; // currently generating
 
 // rendering constants
 const int raySteps = 160;
 const float e = 0.01; // max precision of 8 bit float
+const float renderDist = float(viewSize*chunkSize)/2.1; // max ray distance
 const float dMin = -sqrt(2.0); // important to allow negative sdf distance data encoding.

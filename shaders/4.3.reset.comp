@@ -17,5 +17,5 @@ void main() {
     uint index = cp.x+viewSize*(cp.y+viewSize*cp.z);
 
     chunkData[index] = unloaded;
-    chunkData[index+viewChunks] = empty;
+    chunkData[index+viewChunks] = unstored;
 }

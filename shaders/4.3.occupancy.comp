@@ -1,0 +1,35 @@
+// stage 2 kind of thing for when terrain finishes
+
+#version 440 core
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in; // 1 thread dispatch
+
+layout(std430, binding = 0) buffer ProbeData {
+    uint probeData[];
+};
+
+layout(std430, binding = 1) buffer MaterialData {
+    uint materialData[];
+};
+
+layout(std430, binding = 2) buffer ChunkData {
+    uint chunkData[];
+};
+
+//include shaderheaders/4.3.constantsH.comp
+//include shaderheaders/4.3.functionsH.comp
+//include shaderheaders/4.3.setgetH.comp
+
+// parameters
+uniform uint slot; // slot in buffers to generate at
+uniform uint cIndex; // chunk index of slot in chunkData
+
+void main() {
+    // sets slot if chunk is full
+    if (getStoreFlag(slot) == stored) {
+        chunkData[cIndex] = slot; // sets slot if stored
+    } else {
+        setStoreFlag(slot, unstored); // if empty or full, set unstored
+        chunkData[cIndex] = unloaded;
+    }
+}

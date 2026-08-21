@@ -26,25 +26,23 @@ extern uint* surfaceData;
 // pointer to index data
 extern uint* chunkData;
 
-// terrain generator
-extern GLuint TerrainID;
-
-// updater
-extern GLuint UpdatesID;
-
-// index occupancy resetter
-extern GLuint ResetID;
+// shaders
+extern GLuint TerrainID; // terrain generator
+extern GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
+extern GLuint UpdatesID; // updater
+extern GLuint ResetID; // index occupancy resetter
 
 // unloaded chunk ID
 const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
 
 // enum flags for chunk state
-const uint empty = 3u; // unloaded
-const uint full = 2u; // unloaded
-const uint stored = 1u; // loaded
-const uint generating = 0u; // currently generating, skip
+const uint unstored = 4u; // unloaded
+const uint stored = 3u; // loaded
+const uint empty = 2u; // to be unloaded
+const uint full = 1u; // to be unloaded
+const uint generating = 0u; // currently generating
 
-// chunk timing average
+// chunk timing average helpers
 double countTime = 0.0; // total time spent generating chunks
 double genCount = 0.0; // amount of chunks generated
 
@@ -98,13 +96,23 @@ void resetChunks() {
 
 void getChunk(vec3 cPos, uint slot, uint cIndex) {
     // need to check if saved before loading it
+    // stage 1, generate terrain, and get occupancy
     glUseProgram(TerrainID);
     shaderSetVec3(TerrainID, "cPos", cPos); // set position
     shaderSetUint(TerrainID, "slot", slot); // set slot
-    shaderSetUint(TerrainID, "cIndex", cIndex); // set chunk index
 
     glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
+void updateOccupancy(uint slot, uint cIndex) {
+    // upon this finishing, set slot and clean occupancy
+    glUseProgram(OccupancyID);
+    shaderSetUint(OccupancyID, "cIndex", cIndex); // set position
+    shaderSetUint(OccupancyID, "slot", slot); // set slot
+
+    glDispatchCompute(1,1,1);
+    //glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 }
 
 // generates chunk at global chunk position, automatically puts it at nearest unloaded chunk index.
@@ -120,7 +128,7 @@ void generateChunk(vec3 cPos) {
     // make sure old chunk gets overwritten
     if (getSlot(cIndex) != unloaded) {
         // essentially gets the slot that that chunk index was assigned
-        setFlag(getSlot(cIndex),empty); // empty old slot this chunk was filling
+        setFlag(getSlot(cIndex),unstored); // empty old slot this chunk was filling
         setSlot(cIndex,unloaded); // assume chunk is unloaded for now
     }
 
@@ -129,7 +137,7 @@ void generateChunk(vec3 cPos) {
     uint hash = hash_uint(cIndex); // hash for easier search
     for (uint i = 0u; i < viewChunks/cut; i++) {
         uint index = (i+hash)%(viewChunks/cut); // modulate within alloted space
-        if (getFlag(index) == empty || getFlag(index) == full) { // if unloaded chunk found, set slot.
+        if (getFlag(index) == unstored) { // if unloaded chunk found, set slot.
             slot = index;
             setFlag(index,generating); // flag chunk as generating
             //printf("%u steps required for chunk.\n", i);
@@ -140,6 +148,7 @@ void generateChunk(vec3 cPos) {
     // generates chunk, which also checks if chunk is full and sets its slot
     
     getChunk(cPos, slot, cIndex);
+    updateOccupancy(slot, cIndex);
     //createFenceGPU();
 
     // if chunk stored, set its slot
@@ -164,21 +173,18 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     uint slot = unloaded;
     if (getSlot(cIndex) != unloaded) { // get old chunk slot to edit if loaded
         slot = getSlot(cIndex);
-        //setSlot(cIndex, unloaded);
+        setSlot(cIndex, unloaded);
     }
 
     else {
     uint hash = hash_uint(cIndex); // hash for easier search
     for (uint i = 0u; i < viewChunks/cut; i++) { // otherwise find unloaded slot for one
         uint index = (i+hash)%(viewChunks/cut); // modulate within alloted space
-        if (getFlag(index) == empty || getFlag(index) == full) { // if unloaded chunk found, set slot.
+        if (getFlag(index) == unstored) { // if unloaded chunk found, set slot.
             slot = index;
-            setFlag(slot, generating); // flag chunk as generating
 
             getChunk(add_f3xf(cPos, center*2), slot, cIndex); // wtaf why do I need to add entire view of offset here
-            createFenceGPU(); // do need fence here because I can't dispatch next one without waiting for completion
-            setSlot(cIndex, unloaded); // unset slot because getChunk sets it.
-            // maybe memory barrier instead
+            //createFenceGPU(); // do need fence here because I can't dispatch next one without waiting for completion
             
             //printf("Chunk gotten flag: %u\n",chunkData[viewChunks]);
             //printf("Needed to find slot for chunk, ");
@@ -186,6 +192,9 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
         }
     } if (slot == unloaded) return; // do nothing if no slot found
     }
+
+    //setSlot(cIndex, unloaded); // unset slot because getChunk could set it.
+    setFlag(slot, generating); // flag chunk as generating
 
     //printf("Using slot %u at %u chunk index.\n",slot, cIndex);
 
@@ -203,11 +212,15 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
 
     glDispatchCompute((chunkSize+3)/4,(chunkSize+3)/4,(chunkSize+3)/4);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    createFenceGPU();
+    
+    updateOccupancy(slot, cIndex);
 
-    if (getFlag(slot) == stored) setSlot(cIndex,slot);
+    createFenceGPU(); // do need fence here because I can't dispatch next one without waiting for completion
+
+
+    //if (getFlag(slot) == stored) setSlot(cIndex,slot);
  
-    else setFlag(slot, empty); // if chunk not filled keep found slot unloaded
+    //else setFlag(slot, unstored); // if chunk not filled keep found slot unloaded
 }
 
 // need function for the first pass upon loading where you assign a index to every chunk position (will do grid with posToIndex function)

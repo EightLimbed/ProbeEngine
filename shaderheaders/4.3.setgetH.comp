@@ -92,14 +92,15 @@ uint getMaterial(uint index) {
 // play with different thresholds, for example, dMin got rid of gaps in world.
 void updateStoreFlag(float d, uint slot) {
     uint index = viewChunks+slot;
-    if (chunkData[index] == generating) {
-        if (d<=0.0) chunkData[index] = full;
-        else if (d>dMin) chunkData[index] = empty;
-    } 
-    else if (d<=0.0 && chunkData[index] == empty) chunkData[index] = stored; // if empty, and full found.
-    else if (d>dMin && chunkData[index] == full) chunkData[index] = stored; // if full, and empty found.
+    if (d<= 3) chunkData[index] |= full; // or with full
+    if (d>= dMin) chunkData[index] |= empty; // or with empty
+    // ends up as 1u, 2u or 3u
 }
 
 uint getStoreFlag(uint slot) {
     return chunkData[viewChunks+slot];
+}
+
+void setStoreFlag(uint slot, uint flag) {
+    chunkData[viewChunks+slot] = flag;
 }

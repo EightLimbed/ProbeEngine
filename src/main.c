@@ -15,13 +15,14 @@ GLuint ScreenID; // screenshader
 GLuint MarcherID; // raymarcher
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
+GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
 GLuint ResetID; // index occupancy resetter
 
 // textures
 GLuint screenTex; // screen
 
 // chunk data stuff
-const uint cut = 10; // amount to divide max memory by
+const uint cut = 1; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
 const uint viewSize = 32; // world size in chunks, odd number breaks edits?
@@ -61,7 +62,7 @@ int main() {
   player player;
   {vec3 pos = {0.0,0.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 150.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
 
   // creates SSBOs
@@ -91,6 +92,10 @@ int main() {
   // terrain gen shader
   shaderCompile(&TerrainID, GL_COMPUTE_SHADER, "shaders/4.3.terrain.comp");
   TerrainID = linkComputeShader(TerrainID);
+
+  // occupancy (terrains stage 2) shader
+  shaderCompile(&OccupancyID, GL_COMPUTE_SHADER, "shaders/4.3.occupancy.comp");
+  OccupancyID = linkComputeShader(OccupancyID);
 
   // chunk reset shader
   shaderCompile(&ResetID, GL_COMPUTE_SHADER, "shaders/4.3.reset.comp");
