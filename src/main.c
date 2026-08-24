@@ -25,7 +25,7 @@ GLuint screenTex; // screen
 const uint cut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 48; // world size in chunks, odd number breaks edits?
+const uint viewSize = 42; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
 const uint allotedChunks = viewChunks/cut;
 const float axisSize = (float)(chunkSize*viewSize);
@@ -62,7 +62,7 @@ int main() {
   player player;
   {vec3 pos = {0.0,0.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 150.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
 
   // creates SSBOs
@@ -116,6 +116,8 @@ int main() {
   // frame time
   float deltaTime = 0.0f;
   float lastTime = 0.0f;
+  float maxDelta = 0.0f;
+  float minDelta = 1e20f;
 
   // old world pos for shifting
   vec3 owp = worldPos;
@@ -127,7 +129,11 @@ int main() {
     float currentTime = glfwGetTime();
     deltaTime = currentTime - lastTime;
     lastTime = currentTime;
-    //printf("FPS: %f\n",1.0/deltaTime);
+
+    // fps display
+    printf("FPS: %.2f \nMin FPS: %.2f \nMax FPS: %.2f\n\033[3A\r",1.0/deltaTime, 1.0/maxDelta, 1.0/minDelta);
+    if (deltaTime>maxDelta) maxDelta = deltaTime;
+    if (deltaTime<minDelta) minDelta = deltaTime;
 
     // handles player inputs
     playerInputs(&player,deltaTime);
@@ -152,6 +158,11 @@ int main() {
 
     // terrain updates
     if (player.mousePress != 0) {
+        // reset fps display stuff if necessary
+        maxDelta = 0.0f;
+        minDelta = 1e20f;
+
+        // apply update
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
         applyUpdate(target, player.mousePress, 0, 6.0, 7);
     }

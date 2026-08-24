@@ -34,10 +34,11 @@ extern GLuint UpdatesID; // updater
 extern GLuint ResetID; // index occupancy resetter
 
 // chunk gen queue, sized to allotedChunks
-vec3* chunkQueue; // list of positions for chunks, each frame generate as many as possible while maintaining fps
+vec3* chunkQueue; // list of positions for chunks, generate needed amount, spread over multiple frames
 uint queueHead = 0u;
 uint queueTail = 0u;
 uint queueSize = 0u;
+uint queueWork = 0u; // max amount of chunks to process per frame, is max needed at a target fps to never be too slow for player speed
 
 // unloaded chunk ID
 const uint unloaded = 0xFFFFFFFFu; // flag for if chunk isn't loaded
@@ -90,8 +91,20 @@ uint posToChunkIndex(uvec3 lp) {
     return cp.x+viewSize*(cp.y+viewSize*cp.z);
 }
 
+void setQueueWork(float targetFPS, float playerSpeed) {
+    //float targetFPS = 60.0; // fps you are trying to hit
+    float framesPerChunk = (float)chunkSize/playerSpeed*targetFPS; // amount of frames to cross a chunk at player speed
+    printf("Frames to cross a chunk: %f\n", framesPerChunk);
+    uint frameChunksMax = viewSize*viewSize*2.5; // max amount of chunks that could be generated while walking
+    queueWork = frameChunksMax/(uint)framesPerChunk;
+    printf("Work to do: %u\n",queueWork);
+}
+
 // gets data structures ready for chunks
 void resetChunks() {
+    // set max queue work per frame
+    setQueueWork(60.0, 100);
+
     // reset queue
     chunkQueue = calloc(viewChunks, sizeof(vec3)); // empty chunkQueue
 
@@ -170,30 +183,12 @@ void generateChunk(vec3 cPos) {
 }
 
 void followChunkQueue() {
-    // time setup
-    struct timespec start, end;
-    timespec_get(&start, TIME_UTC);
-    double duration = 0.0;
-
-    if (queueSize == 0u) return;
-    uint count = 0u;
-
-    // while still at 60 fps
-    while (count < 400u && queueSize > 0u) {
-        count ++;
+    // generates until done, or until needed amount is hit
+    for (int i = 0; i < queueWork; i++) {
+        if (queueSize <=0u) break;
         generateChunk(chunkQueue[queueTail]); // generates chunk last added
         dequeueChunk(); // removes chunk from queue
-
-        // time check
-        timespec_get(&end, TIME_UTC);
-        duration = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1000000000.0;
-        //countTime += duration;
-        //genCount += 1.0;
-        //printf("Current chunk took %f seconds, for an average of %f.\r", duration, countTime/genCount);
     }
-    if (duration > 1.0/120.0) printf("Stopped to time: %u.\n", count);
-    else if (queueHead == queueTail) printf("Stopped because done %f,%f.\n", duration, 0.01);
-    //printf("Spent %f seconds generating chunks this frame.\n", duration);
 }
 
 // updates chunk at position
