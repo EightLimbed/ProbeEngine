@@ -145,7 +145,8 @@ void main() {
         // distance to chunk border
         //collect += float(chunkData[posToChunkIndex(getLocalPos(p, worldPos))]/chunkProbes)/float(viewChunks*100);
         float cd = distToBorder(mod(p,float(chunkSize)), rd, vec3(chunkSize))+e;
-        if (chunkData[posToChunkIndex(getLocalPos(p, worldPos))] == unloaded) { // if in unloaded, skip
+        uint slot = chunkData[posToChunkIndex(getLocalPos(p, worldPos))];
+        if (slot == unloaded || getStoreFlag(slot) == generating) { // if in unloaded, skip
             t+=cd+e;
             continue;
         }

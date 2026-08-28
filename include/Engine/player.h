@@ -96,6 +96,10 @@ void playerInputs(player *p, float deltaTime) {
   if (glfwGetKey(p->window,GLFW_KEY_LEFT_SHIFT)==GLFW_PRESS) {
     p->pos.y -= p->speed*deltaTime;
   }
+  // teleport
+  if (glfwGetKey(p->window,GLFW_KEY_P)==GLFW_PRESS) {
+    p->pos = (vec3){128.0,0.0,128.0};
+  }
 }
 
 void playerMouse(player *p) {

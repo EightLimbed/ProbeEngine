@@ -25,7 +25,7 @@ GLuint screenTex; // screen
 const uint cut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 42; // world size in chunks, odd number breaks edits?
+const uint viewSize = 48; // world size in chunks, odd number breaks edits?
 const uint viewChunks = viewSize*viewSize*viewSize;
 const uint allotedChunks = viewChunks/cut;
 const float axisSize = (float)(chunkSize*viewSize);
@@ -173,8 +173,10 @@ int main() {
         ivec3 shift = {(int)(worldPos.x-owp.x)/(int)chunkSize,
                        (int)(worldPos.y-owp.y)/(int)chunkSize,
                        (int)(worldPos.z-owp.z)/(int)chunkSize};
+
         shiftChunks(shift);
     }
+        
     owp = worldPos;
 
     // apply terrain gen
@@ -192,7 +194,7 @@ int main() {
   }
 
   // end
-  printf("\n");
+  printf("\n\n\n");
   glfwDestroyWindow(window);
   glfwTerminate();
   return 0;

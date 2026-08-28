@@ -26,6 +26,14 @@ vec3 add_f3(vec3 a, vec3 b) {
   return c;
 }
 
+ivec3 add_i3(ivec3 a, ivec3 b) {
+  ivec3 c;
+  c.x = a.x+b.x;
+  c.y = a.y+b.y;
+  c.z = a.z+b.z;
+  return c;
+}
+
 vec3 add_f3xf(vec3 a, float b) {
   vec3 c;
   c.x = a.x+b;
@@ -36,6 +44,14 @@ vec3 add_f3xf(vec3 a, float b) {
 
 vec3 subtract_f3(vec3 a, vec3 b) {
   vec3 c;
+  c.x = a.x-b.x;
+  c.y = a.y-b.y;
+  c.z = a.z-b.z;
+  return c;
+}
+
+ivec3 subtract_i3(ivec3 a, ivec3 b) {
+  ivec3 c;
   c.x = a.x-b.x;
   c.y = a.y-b.y;
   c.z = a.z-b.z;
@@ -153,6 +169,12 @@ int maxi(int a, int b) {
   return (a>b) ? a : b;
 }
 
+int clampi(int a, int mi, int ma) {
+  if (a>ma) return ma;
+  else if (a<mi) return mi;
+  else return a;
+}
+
 float minf(float a, float b) {
   return (a<b) ? a : b;
 }
@@ -163,6 +185,12 @@ float maxf(float a, float b) {
 
 int stepi(int a, int b) {
   return (a<=b) ? 0 : 1;
+}
+
+int signi(int a) {
+  if (a>0) return 1;
+  else if (a<0) return -1;
+  else return 0;
 }
 
 uint hash_uint(uint x) {

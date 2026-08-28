@@ -33,7 +33,7 @@ extern GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
 extern GLuint UpdatesID; // updater
 extern GLuint ResetID; // index occupancy resetter
 
-// chunk gen queue, sized to allotedChunks
+// chunk gen queue, sized to viewChunks
 vec3* chunkQueue; // list of positions for chunks, generate needed amount, spread over multiple frames
 uint queueHead = 0u;
 uint queueTail = 0u;
@@ -106,7 +106,8 @@ void resetChunks() {
     setQueueWork(60.0, 100);
 
     // reset queue
-    chunkQueue = calloc(viewChunks, sizeof(vec3)); // empty chunkQueue
+    free(chunkQueue);
+    chunkQueue = calloc(viewChunks+1, sizeof(vec3)); // empty chunkQueue
 
     // set all indexes and flags to unloaded
     glUseProgram(ResetID);
@@ -174,20 +175,25 @@ void generateChunk(vec3 cPos) {
             //printf("%u steps required for chunk.\n", i);
             break;
         }
-    } if (slot == unloaded) return;  // if no space found, do nothing
+    } if (slot == unloaded) return;  // if no space found, do nothing, don't remove from queue
 
     // generates chunk, which also checks if chunk is full and sets its slot
     
     getChunk(cPos, slot, cIndex);
     updateOccupancy(slot, cIndex);
+    dequeueChunk(); // removes chunk from queue
 }
 
 void followChunkQueue() {
+    // throttles if too much work, and just does it all
+    if (queueSize>viewChunks/2)  // arbitratry value can be tuned
+        while (queueSize>0) {
+        generateChunk(chunkQueue[queueTail]); // generates chunk last added
+    }
     // generates until done, or until needed amount is hit
-    for (int i = 0; i < queueWork; i++) {
+    else for (int i = 0; i < queueWork; i++) {
         if (queueSize <=0u) break;
         generateChunk(chunkQueue[queueTail]); // generates chunk last added
-        dequeueChunk(); // removes chunk from queue
     }
 }
 
@@ -272,6 +278,12 @@ void genSpawnChunks() {
 
 // 'shifts' chunks when player moves, localPos actually handles shifting, this just regenerates new chunks.
 void shiftChunks(ivec3 shift) {
+    // overflow and teleport handling
+    if (abs(shift.x)>1||abs(shift.y)>1||abs(shift.z)>1) {
+        genSpawnChunks();
+        return;
+    }
+    
     // shift x
     if (shift.x != 0) {
         for (int y = 0; y < viewSize; y++)
@@ -282,6 +294,19 @@ void shiftChunks(ivec3 shift) {
             enqueueChunk(cPos);
         }
     }
+
+    // shift y
+    if (shift.y != 0) {
+        for (int x = 0; x < viewSize; x++)
+        for (int z = 0; z < viewSize; z++) {
+            ivec3 ip = {x, (shift.y>0) ? shift.y*viewSize-1 : 0, z};
+            vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
+
+            enqueueChunk(cPos);
+        }
+
+    }
+
     // shift z
     if (shift.z != 0) {
         for (int x = 0; x < viewSize; x++)
@@ -292,18 +317,6 @@ void shiftChunks(ivec3 shift) {
             enqueueChunk(cPos);
         }
     }
-    // shift y
-    if (shift.y != 0) {
-        for (int x = 0; x < viewSize; x++)
-        for (int z = 0; z < viewSize; z++) {
-            ivec3 ip = {x, (shift.y>0) ? shift.y*viewSize-1 : 0, z};
-            vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
-
-            enqueueChunk(cPos);
-        }
-    }
-
-    // apply edits saved
 }
 
 // applies updates when necessary
