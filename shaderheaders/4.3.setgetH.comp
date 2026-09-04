@@ -92,10 +92,19 @@ void updateStoreFlag(float d, uint slot) {
     if (d>dMin && d<e) chunkData[viewChunks+slot] = stored;
 }
 
+// gets storing flag
 uint getStoreFlag(uint slot) {
     return chunkData[viewChunks+slot];
 }
 
+// sets storing flag
 void setStoreFlag(uint slot, uint flag) {
     chunkData[viewChunks+slot] = flag;
+}
+
+// flat index for colliderData, uses local position
+uint posToCollisionIndex(uvec3 lp) {
+    uvec3 vp = lp/simFidelity;
+    uint full = simSize/simFidelity;
+    return vp.x+full*(vp.y+full*vp.z);
 }

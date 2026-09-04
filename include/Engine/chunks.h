@@ -3,7 +3,6 @@
 #include "glad/glad.h"
 #include <Engine/types.h>
 #include <Engine/shaders.h>
-#include <time.h>
 
 // memory data
 extern const uint cut;
@@ -18,11 +17,7 @@ extern const float center;
 
 // buffer data
 extern GLuint ssbo2ID; // chunk mapping data
-extern size_t ssbo2Size;
 extern vec3 worldPos; // position of world, for local positioning
-
-// pointer to surface data
-extern uint* surfaceData;
 
 // pointer to index data
 extern uint* chunkData;
@@ -95,9 +90,9 @@ void setQueueWork(float targetFPS, float playerSpeed) {
     //float targetFPS = 60.0; // fps you are trying to hit
     float framesPerChunk = (float)chunkSize/playerSpeed*targetFPS; // amount of frames to cross a chunk at player speed
     printf("Frames to cross a chunk: %f\n", framesPerChunk);
-    uint frameChunksMax = viewSize*viewSize*2.5; // max amount of chunks that could be generated while walking
-    queueWork = frameChunksMax/(uint)framesPerChunk;
-    printf("Work to do: %u\n",queueWork);
+    uint frameChunksMax = viewSize*viewSize*2.7; // max amount of chunks that could be generated while walking
+    queueWork = frameChunksMax/(uint)framesPerChunk; // set queue work
+    //printf("Work to do: %u\n",queueWork);
 }
 
 // gets data structures ready for chunks
@@ -107,7 +102,7 @@ void resetChunks() {
 
     // reset queue
     free(chunkQueue);
-    chunkQueue = calloc(viewChunks+1, sizeof(vec3)); // empty chunkQueue
+    chunkQueue = calloc(viewChunks, sizeof(vec3)); // empty chunkQueue
 
     // set all indexes and flags to unloaded
     glUseProgram(ResetID);

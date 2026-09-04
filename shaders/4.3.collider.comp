@@ -1,0 +1,72 @@
+#version 440 core
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
+
+layout(std430, binding = 0) buffer ProbeData {
+    uint probeData[];
+};
+
+layout(std430, binding = 1) buffer MaterialData {
+    uint materialData[];
+};
+
+layout(std430, binding = 2) buffer ChunkData {
+    uint chunkData[];
+};
+
+layout(std430, binding = 3) buffer ColliderData {
+    uint colliderData[];
+};
+
+//include shaderheaders/4.3.constantsH.comp
+//include shaderheaders/4.3.setgetH.comp
+uniform vec3 worldPos;
+
+// gets still packed probe distance, for collider
+uint getProbePacked(uint index) {
+    uint uintIndex = index >> 2u; // divide by 4
+    uint bitShift = (index & 3u) * 8u; // shift amount
+
+    return (probeData[uintIndex] >> bitShift) & 0xFFu;
+}
+
+void setProbePacked(uint index, uint m) {
+    uint uintIndex = index >> 2u; // divide by 4
+    uint bitShift = (index & 3u) * 8u; // bit shift
+
+    uint insert = (m & 0xFFu) << bitShift;
+    uint clearMask = ~(0xFFu << bitShift); // clear bit
+
+    atomicAnd(colliderData[uintIndex], clearMask);
+    atomicOr(colliderData[uintIndex], insert); // set value. need clear mask if overwriting
+}
+
+void setProbeCollider(uint index, float d) {
+    uint uintIndex = index >> 2u; // divide by 4 (shift/half twice)
+    uint subIndex = index & 3u;
+    uint bitShift = subIndex * 8u; // bit shift
+
+    vec4 probes = vec4(0.0);
+
+    probes[subIndex] = (d-dMin) / float(chunkSize); // set distance, normalized to 0-1
+
+    uint packedProbe = packUnorm4x8(probes);
+    uint clearMask = ~(0xFFu << bitShift); // clear bit
+
+    atomicAnd(colliderData[uintIndex], clearMask);
+    atomicOr(colliderData[uintIndex], packedProbe); // set value. need clear mask if overwriting
+}
+
+// gets probe at a point and sets collision surface data.
+void main() {
+    uvec3 vp = gl_GlobalInvocationID; // position in collider space
+    //if (clamp(vp, 0, (simSize-1)/simFidelity) != vp) return; // overflow
+
+    uvec3 lp = getLocalPos(vp*simFidelity-center-simSize/2,worldPos); // local position, spread and centered
+    uint probePacked = getProbePacked(posToIndex(lp)); // gets packed probe at local position
+
+    setProbePacked(posToCollisionIndex(lp), probePacked); // sets packed probe at collider position
+
+    //float d = getProbe(posToIndex(lp));
+    //setProbeCollider(posToCollisionIndex(lp),d);
+}

@@ -14,6 +14,11 @@ layout(std430, binding = 2) buffer ChunkData {
     uint chunkData[];
 };
 
+layout(std430, binding = 3) buffer ColliderData { // temp for collider view
+    uint colliderData[];
+};
+
+
 // player data
 uniform vec3 pPos = vec3(0.0,0.0,-1.0);
 uniform vec3 worldPos;
@@ -36,6 +41,52 @@ float getProbeWarped(vec3 p) {
     uint index = posToIndex(lp);
     //float warp = (sin(p.y/5.0)-1.0)/2.0;
     return getProbe(index);//+warp;
+}
+
+float getColliderDist(vec3 p) {
+    uvec3 lp = getLocalPos(p,worldPos);
+    if (posToIndex(lp)==unloaded) return 1.0; // safety
+
+    uint index = posToCollisionIndex(lp);
+    
+    // just getProbe code
+    uint uintIndex = index >> 2u;
+    uint subIndex = index & 3u;
+
+    vec4 values = unpackUnorm4x8(colliderData[uintIndex]);
+
+    return ((values[subIndex]*float(chunkSize))+dMin);
+}
+
+// interpolates between surrounding precomputed collider probe distances.
+float smoothColliderDist(vec3 p) {
+    float s = float(simFidelity);
+    vec3 f = mod(p,s)/s;
+
+    // get all probes
+    float d000 = getColliderDist(p + vec3(0,0,0)*simFidelity);
+    float d100 = getColliderDist(p + vec3(1,0,0)*simFidelity);
+    float d010 = getColliderDist(p + vec3(0,1,0)*simFidelity);
+    float d110 = getColliderDist(p + vec3(1,1,0)*simFidelity);
+    float d001 = getColliderDist(p + vec3(0,0,1)*simFidelity);
+    float d101 = getColliderDist(p + vec3(1,0,1)*simFidelity);
+    float d011 = getColliderDist(p + vec3(0,1,1)*simFidelity);
+    float d111 = getColliderDist(p + vec3(1,1,1)*simFidelity);
+
+    // x interpolation
+    float x00 = mix(d000, d100, f.x);
+    float x10 = mix(d010, d110, f.x);
+    float x01 = mix(d001, d101, f.x);
+    float x11 = mix(d011, d111, f.x);
+
+    // y interpolation
+    float y0 = mix(x00, x10, f.y);
+    float y1 = mix(x01, x11, f.y);
+
+    // z interpolation
+    float d = mix(y0, y1, f.z);
+
+    return d; // adjust for negative distances
 }
 
 // interpolates between surrounding precomputed probe distances.
@@ -152,7 +203,7 @@ void main() {
         }
 
         // distance to surface
-        float d = smoothDist(p);
+        float d = smoothColliderDist(p);
         if (cd<d) {
             //collect += 0.1;
             collect = min(collect, 0.5);
@@ -166,8 +217,9 @@ void main() {
                             max(t/renderDist,
                                 float(i)/float(raySteps))
                             ,1.0);
-            float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
+            float shadow = 1.0;//max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
             vec4 color = smoothColor(p);
+            //if (getColliderDist(p) < e) color = vec4(1.0);
 
             imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),pow(falloff, 18.0))+collect);
             return;

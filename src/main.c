@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #include <Engine/shaders.h>
 #include <Engine/chunks.h>
+#include <Engine/physics.h>
 
 // screen
 int screenWidth = 800;
@@ -16,6 +17,7 @@ GLuint MarcherID; // raymarcher
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
 GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
+GLuint ColliderID; // stage that gets collision surface around player.
 GLuint ResetID; // index occupancy resetter
 
 // textures
@@ -25,11 +27,16 @@ GLuint screenTex; // screen
 const uint cut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 48; // world size in chunks, odd number breaks edits?
+const uint viewSize = 32; // world size in chunks
 const uint viewChunks = viewSize*viewSize*viewSize;
+
+const uint simSize = 16*32; // amount of chunks in simulation distance
+const uint simProbes = simSize*simSize*simSize;
+const uint simFidelity = 8; // amount to cut collision buffer detail by in each axis
+
 const uint allotedChunks = viewChunks/cut;
 const float axisSize = (float)(chunkSize*viewSize);
-const float center = (float)(viewSize/2.0)*(float)chunkSize; // if flooring edits get misplaced, if not, edits get cut (with odd viewsize).
+const float center = (float)(viewSize/2.0)*(float)chunkSize;
 vec3 worldPos; // position of world, for local positioning
 
 GLuint ssbo0ID; // probe data
@@ -42,6 +49,10 @@ size_t ssbo1Size = (sizeof(GLuint)*allotedChunks*chunkProbes+7)/8; // /8 for bit
 GLuint ssbo2ID; // chunk bitmask data,
 size_t ssbo2Size = (sizeof(GLuint)*(viewChunks)*2); // 0-viewChunks holds slots, anything past holds flags
 uint* chunkData;
+
+GLuint ssbo3ID; // low res collision sdf
+size_t ssbo3Size = (sizeof(GLuint)*simProbes/(simFidelity*simFidelity*simFidelity)); // lower resolution probe grid for collisions
+uint* colliderData;
 
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -60,7 +71,7 @@ int main() {
 
   // creates player
   player player;
-  {vec3 pos = {0.0,0.0,0.0};
+  {vec3 pos = {0.0,-100.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
   initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
@@ -70,7 +81,7 @@ int main() {
   createSSBO(ssbo0ID, ssbo0Size, 0); // distance data
   createSSBO(ssbo1ID, ssbo1Size, 1); // material data
   chunkData = (uint *)createAndPersistentlyMapSSBO(ssbo2ID, ssbo2Size, 2); // index data
-  //createSSBO(ssbo2ID, ssbo2Size, 2); // chunk occupancy data
+  colliderData = (uint *)createAndPersistentlyMapSSBO(ssbo3ID, ssbo3Size, 3); // collision sdf data
 
   // loads shaders
   // raymarcher
@@ -100,6 +111,10 @@ int main() {
   // chunk reset shader
   shaderCompile(&ResetID, GL_COMPUTE_SHADER, "shaders/4.3.reset.comp");
   ResetID = linkComputeShader(ResetID);
+
+  // update shader
+  shaderCompile(&ColliderID, GL_COMPUTE_SHADER, "shaders/4.3.collider.comp");
+  ColliderID = linkComputeShader(ColliderID);
   
   // updates settings to make sure everything is correct
   updateSettings();
@@ -112,6 +127,7 @@ int main() {
   // generate terrain
   resetChunks();
   genSpawnChunks();
+  updatecolliderData();
 
   // frame time
   float deltaTime = 0.0f;
@@ -165,6 +181,7 @@ int main() {
         // apply update
         vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
         applyUpdate(target, player.mousePress, 0, 6.0, 7);
+        updatecolliderData();
     }
     //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);
 
@@ -175,6 +192,7 @@ int main() {
                        (int)(worldPos.z-owp.z)/(int)chunkSize};
 
         shiftChunks(shift);
+        updatecolliderData();
     }
         
     owp = worldPos;
