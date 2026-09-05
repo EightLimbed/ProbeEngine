@@ -27,13 +27,12 @@ uint posToIndex(uvec3 lp) {
     uint slot = chunkData[posToChunkIndex(lp)];
     if (slot == unloaded) return unloaded; // early out for unloaded indexes
 
-    // local positioning
+    // local positioning, should morton order
     uvec3 pp = lp % chunkSize;
     uint i = pp.x+chunkSize*(pp.y+chunkSize*pp.z);
 
     // combine
     return slot*chunkProbes+i;
-    //return lp.x+axisSize*(lp.y+axisSize*lp.z);
 }
 
 // sets probe with 8 bit packing

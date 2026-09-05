@@ -2,6 +2,7 @@
 #include <Engine/types.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include <Engine/physics.h>
 
 typedef struct {
   // physical
@@ -57,6 +58,7 @@ void clampPlayer(player *p, vec3 A, vec3 B) {
 }
 
 void playerInputs(player *p, float deltaTime) {
+  printf("Dist to Surface: %f\r", smoothColliderDist(p->pos));
   // gets forward direction
   vec3 forward = {p->dir.x, 0.0, p->dir.z};
   forward = normalize(forward);
@@ -66,36 +68,46 @@ void playerInputs(player *p, float deltaTime) {
 
   // forward
   if (glfwGetKey(p->window,GLFW_KEY_W)==GLFW_PRESS) {
-    p->pos.x += p->speed*deltaTime*forward.x;
-    p->pos.y += p->speed*deltaTime*forward.y;
-    p->pos.z += p->speed*deltaTime*forward.z;
+    p->pos = add_f3(p->pos, multiply_f3xf(forward, p->speed*deltaTime));
+    //if (smoothColliderDist(p->pos) < 1.0)
+      //p->pos = subtract_f3(p->pos, multiply_f3xf(forward, p->speed*deltaTime));
   }
+
   // backward
   if (glfwGetKey(p->window,GLFW_KEY_S)==GLFW_PRESS) {
-    p->pos.x -= p->speed*deltaTime*forward.x;
-    p->pos.y -= p->speed*deltaTime*forward.y;
-    p->pos.z -= p->speed*deltaTime*forward.z;
+    p->pos = subtract_f3(p->pos, multiply_f3xf(forward, p->speed*deltaTime));
+    //if (smoothColliderDist(p->pos) < 1.0)
+      //p->pos = add_f3(p->pos, multiply_f3xf(forward, p->speed*deltaTime));
   }
-  // right
-  if (glfwGetKey(p->window,GLFW_KEY_D)==GLFW_PRESS) {
-    p->pos.x -= p->speed*deltaTime*right.x;
-    p->pos.y -= p->speed*deltaTime*right.y;
-    p->pos.z -= p->speed*deltaTime*right.z;
-  }
+
   // left
   if (glfwGetKey(p->window,GLFW_KEY_A)==GLFW_PRESS) {
-    p->pos.x += p->speed*deltaTime*right.x;
-    p->pos.y += p->speed*deltaTime*right.y;
-    p->pos.z += p->speed*deltaTime*right.z;
+    p->pos = add_f3(p->pos, multiply_f3xf(right, p->speed*deltaTime));
+    //if (smoothColliderDist(p->pos) < 1.0)
+      //p->pos = subtract_f3(p->pos, multiply_f3xf(right, p->speed*deltaTime));
   }
+
+  // right
+  if (glfwGetKey(p->window,GLFW_KEY_D)==GLFW_PRESS) {
+    p->pos = subtract_f3(p->pos, multiply_f3xf(right, p->speed*deltaTime));
+    //if (smoothColliderDist(p->pos) < 1.0)
+      //p->pos = add_f3(p->pos, multiply_f3xf(right, p->speed*deltaTime));
+  }
+
   // up
   if (glfwGetKey(p->window,GLFW_KEY_SPACE)==GLFW_PRESS) {
     p->pos.y += p->speed*deltaTime;
+    //if (smoothColliderDist(p->pos) < 1.0)
+      //p->pos.y -= p->speed*deltaTime;
   }
+
   // down
   if (glfwGetKey(p->window,GLFW_KEY_LEFT_SHIFT)==GLFW_PRESS) {
     p->pos.y -= p->speed*deltaTime;
+    //if (smoothColliderDist(p->pos) < 1.0)
+      //p->pos.y += p->speed*deltaTime;
   }
+
   // teleport
   if (glfwGetKey(p->window,GLFW_KEY_P)==GLFW_PRESS) {
     p->pos = (vec3){128.0,0.0,128.0};

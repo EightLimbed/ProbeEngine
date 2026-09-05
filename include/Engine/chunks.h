@@ -3,6 +3,7 @@
 #include "glad/glad.h"
 #include <Engine/types.h>
 #include <Engine/shaders.h>
+#include <Engine/setget.h>
 
 // memory data
 extern const uint cut;
@@ -46,45 +47,6 @@ const uint generating = 0u; // currently generating
 // chunk timing average helpers
 double countTime = 0.0; // total time spent generating chunks
 double genCount = 0.0; // amount of chunks generated
-
-// gets flag of a slot
-uint getFlag(uint slot) {
-    return chunkData[viewChunks+slot]; // chunkData stores slots and flags, slots first
-}
-
-// sets flag of a slot
-void setFlag(uint slot, uint flag) {
-    chunkData[viewChunks+slot] = flag;
-}
-
-// gets slot at a chunk index
-uint getSlot(uint cIndex) {
-    return chunkData[cIndex]; // chunkData stores slots and flags, slots first
-}
-
-// sets flag of a slot
-void setSlot(uint cIndex, uint slot) {
-    chunkData[cIndex] = slot;
-}
-
-// gets position, rounded down to chunk
-vec3 getChunkPos(vec3 p) {
-    float cs = (float)chunkSize;
-    vec3 cp = multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
-    return cp;
-}
-
-// gets local position within view, wrapped
-uvec3 getLocalPos(vec3 p) {
-    uvec3 lp = vec3_to_uvec3(mod_f3xf(add_f3(floor_f3(p),worldPos), (float)chunkSize*viewSize));
-    return lp;
-}
-
-// gets index in index data
-uint posToChunkIndex(uvec3 lp) {
-    uvec3 cp = divide_u3xu(lp, chunkSize);
-    return cp.x+viewSize*(cp.y+viewSize*cp.z);
-}
 
 void setQueueWork(float targetFPS, float playerSpeed) {
     //float targetFPS = 60.0; // fps you are trying to hit

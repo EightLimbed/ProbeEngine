@@ -41,22 +41,6 @@ void setProbePacked(uint index, uint m) {
     atomicOr(colliderData[uintIndex], insert); // set value. need clear mask if overwriting
 }
 
-void setProbeCollider(uint index, float d) {
-    uint uintIndex = index >> 2u; // divide by 4 (shift/half twice)
-    uint subIndex = index & 3u;
-    uint bitShift = subIndex * 8u; // bit shift
-
-    vec4 probes = vec4(0.0);
-
-    probes[subIndex] = (d-dMin) / float(chunkSize); // set distance, normalized to 0-1
-
-    uint packedProbe = packUnorm4x8(probes);
-    uint clearMask = ~(0xFFu << bitShift); // clear bit
-
-    atomicAnd(colliderData[uintIndex], clearMask);
-    atomicOr(colliderData[uintIndex], packedProbe); // set value. need clear mask if overwriting
-}
-
 // gets probe at a point and sets collision surface data.
 void main() {
     uvec3 vp = gl_GlobalInvocationID; // position in collider space
@@ -66,7 +50,4 @@ void main() {
     uint probePacked = getProbePacked(posToIndex(lp)); // gets packed probe at local position
 
     setProbePacked(posToCollisionIndex(lp), probePacked); // sets packed probe at collider position
-
-    //float d = getProbe(posToIndex(lp));
-    //setProbeCollider(posToCollisionIndex(lp),d);
 }

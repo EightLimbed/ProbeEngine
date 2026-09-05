@@ -147,7 +147,7 @@ int main() {
     lastTime = currentTime;
 
     // fps display
-    printf("FPS: %.2f \nMin FPS: %.2f \nMax FPS: %.2f\n\033[3A\r",1.0/deltaTime, 1.0/maxDelta, 1.0/minDelta);
+    //printf("FPS: %.2f \nMin FPS: %.2f \nMax FPS: %.2f\n\033[3A\r",1.0/deltaTime, 1.0/maxDelta, 1.0/minDelta);
     if (deltaTime>maxDelta) maxDelta = deltaTime;
     if (deltaTime<minDelta) minDelta = deltaTime;
 

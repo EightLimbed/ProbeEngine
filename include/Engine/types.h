@@ -18,6 +18,10 @@ typedef struct {
   uint x,y;
 } uvec2;
 
+typedef struct {
+  float x,y,z,w;
+} vec4;
+
 vec3 add_f3(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.x+b.x;
@@ -79,14 +83,13 @@ double glsl_mod(double x, double y) {
     return x - y * floor(x / y);
 }
 
-vec3 mod_f3xf(vec3 a, float b) {
+vec3 glsl_modf3xf(vec3 a, float b) {
   vec3 c;
-  c.x = glsl_mod(a.x,b);
-  c.y = glsl_mod(a.y,b);
-  c.z = glsl_mod(a.z,b);
+  c.x = glsl_mod(a.x, b);
+  c.y = glsl_mod(a.y, b);
+  c.z = glsl_mod(a.z, b);
   return c;
 }
-
 
 vec3 multiply_f3xf(vec3 a, float f) {
   vec3 c;
@@ -181,6 +184,10 @@ float minf(float a, float b) {
 
 float maxf(float a, float b) {
   return (a>b) ? a : b;
+}
+
+float mixf(float x, float y, float a) {
+  return a*(y-x)+x;
 }
 
 int stepi(int a, int b) {

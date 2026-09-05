@@ -203,7 +203,7 @@ void main() {
         }
 
         // distance to surface
-        float d = smoothColliderDist(p);
+        float d = smoothDist(p);
         if (cd<d) {
             //collect += 0.1;
             collect = min(collect, 0.5);
@@ -217,7 +217,7 @@ void main() {
                             max(t/renderDist,
                                 float(i)/float(raySteps))
                             ,1.0);
-            float shadow = 1.0;//max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
+            float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
             vec4 color = smoothColor(p);
             //if (getColliderDist(p) < e) color = vec4(1.0);
 
