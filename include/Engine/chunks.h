@@ -111,7 +111,7 @@ void updateOccupancy(uint slot, uint cIndex) {
 // generates chunk at global chunk position, automatically puts it at nearest unloaded chunk index.
 void generateChunk(vec3 cPos) {
     // get current chunk
-    uvec3 lp = getLocalPos(subtract_f3(cPos, worldPos));
+    uvec3 lp = getLocalPos(sub_f3(cPos, worldPos));
     uint cIndex = posToChunkIndex(lp);
 
     // make sure old chunk gets overwritten
@@ -157,7 +157,7 @@ void followChunkQueue() {
 // updates chunk at position
 void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint material) {
     // get current chunk
-    uvec3 lp = getLocalPos(subtract_f3(cPos,worldPos));
+    uvec3 lp = getLocalPos(sub_f3(cPos,worldPos));
     //printf("Update lp: (%u,%u,%u), ",lp.x,lp.y,lp.z);
     uint cIndex = posToChunkIndex(lp);
     
@@ -194,7 +194,7 @@ void updateChunk(vec3 target, vec3 cPos, int click, uint type, float size, uint 
     shaderSetUint(UpdatesID, "slot", slot); // set slot
     shaderSetUint(UpdatesID, "cIndex", cIndex); // set chunk index, no need to set if assuming full from edits
 
-    shaderSetVec3(UpdatesID, "uPos", subtract_f3(cPos, target)); // pass in local update position
+    shaderSetVec3(UpdatesID, "uPos", sub_f3(cPos, target)); // pass in local update position
     shaderSetInt(UpdatesID, "uClick", click);
     shaderSetUint(UpdatesID, "uType", type);
     shaderSetFloat(UpdatesID, "uSize", size);
@@ -227,7 +227,7 @@ void genSpawnChunks() {
     for (int y = 0; y < viewSize; y++)
     for (int z = 0; z < viewSize; z++) {
         vec3 p = {(float)x,(float)y,(float)z};
-        vec3 cPos = add_f3(multiply_f3xf(p, (float)chunkSize), worldPos); // adding worldPos because generateChunk works on worldPos
+        vec3 cPos = add_f3(mult_f3xf(p, (float)chunkSize), worldPos); // adding worldPos because generateChunk works on worldPos
         enqueueChunk(cPos); // generates chunk at global position
     }
     //printf("Took %f seconds to generate spawn chunks.\n", glfwGetTime()-time);
@@ -246,7 +246,7 @@ void shiftChunks(ivec3 shift) {
         for (int y = 0; y < viewSize; y++)
         for (int z = 0; z < viewSize; z++) {
             ivec3 ip = {(shift.x>0) ? shift.x*viewSize-1 : 0, y, z}; // need -1, likely because shifting or something idk
-            vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
+            vec3 cPos = add_f3(mult_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
 
             enqueueChunk(cPos);
         }
@@ -257,7 +257,7 @@ void shiftChunks(ivec3 shift) {
         for (int x = 0; x < viewSize; x++)
         for (int z = 0; z < viewSize; z++) {
             ivec3 ip = {x, (shift.y>0) ? shift.y*viewSize-1 : 0, z};
-            vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
+            vec3 cPos = add_f3(mult_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
 
             enqueueChunk(cPos);
         }
@@ -269,7 +269,7 @@ void shiftChunks(ivec3 shift) {
         for (int x = 0; x < viewSize; x++)
         for (int y = 0; y < viewSize; y++) {
             ivec3 ip = {x, y, (shift.z>0) ? shift.z*viewSize-1 : 0};
-            vec3 cPos = add_f3(multiply_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
+            vec3 cPos = add_f3(mult_f3xf(ivec3_to_vec3(ip), (float)chunkSize),worldPos);
 
             enqueueChunk(cPos);
         }
@@ -284,8 +284,8 @@ void applyUpdate(vec3 target, int click, uint type, float size, uint material) {
     for (int y = -1; y < 2; y++)
     for (int z = -1; z < 2; z++) {
         vec3 offset = {(float)x,(float)y,(float)z};
-        vec3 ctarget = subtract_f3(target, (vec3){center,center,center}); // centered target
-        vec3 cPos = add_f3(getChunkPos(ctarget),multiply_f3xf(offset, (float)chunkSize));
+        vec3 ctarget = sub_f3(target, (vec3){center,center,center}); // centered target
+        vec3 cPos = add_f3(getChunkPos(ctarget),mult_f3xf(offset, (float)chunkSize));
         //printf("Chunk %u ", count);
         updateChunk(ctarget, cPos, click, type, size, material); // updates chunk at global position
         //printf("Offset: (%f,%f,%f)",cPos.x,cPos.y,cPos.z);

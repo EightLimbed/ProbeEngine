@@ -30,7 +30,7 @@ const uint chunkProbes = chunkSize*chunkSize*chunkSize;
 const uint viewSize = 32; // world size in chunks
 const uint viewChunks = viewSize*viewSize*viewSize;
 
-const uint simSize = 16*32; // amount of chunks in simulation distance
+const uint simSize = 8*32; // simulation distance in probes
 const uint simProbes = simSize*simSize*simSize;
 const uint simFidelity = 8; // amount to cut collision buffer detail by in each axis
 
@@ -179,7 +179,7 @@ int main() {
         minDelta = 1e20f;
 
         // apply update
-        vec3 target = add_f3(player.pos,multiply_f3xf(player.dir,16.0));
+        vec3 target = add_f3(player.pos,mult_f3xf(player.dir,16.0));
         applyUpdate(target, player.mousePress, 0, 6.0, 7);
         updatecolliderData();
     }

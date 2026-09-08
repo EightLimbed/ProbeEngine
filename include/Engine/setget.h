@@ -45,7 +45,7 @@ void setSlot(uint cIndex, uint slot) {
 // gets position, rounded down to chunk
 vec3 getChunkPos(vec3 p) {
     float cs = (float)chunkSize;
-    vec3 cp = multiply_f3xf(floor_f3(multiply_f3xf(p, 1.0f/cs)),cs);
+    vec3 cp = mult_f3xf(floor_f3(mult_f3xf(p, 1.0f/cs)),cs);
     return cp;
 }
 
@@ -57,13 +57,13 @@ uvec3 getLocalPos(vec3 p) {
 
 // gets index in index data
 uint posToChunkIndex(uvec3 lp) {
-    uvec3 cp = divide_u3xu(lp, chunkSize);
+    uvec3 cp = div_u3xu(lp, chunkSize);
     return cp.x+viewSize*(cp.y+viewSize*cp.z);
 }
 
 // flat index for colliderData, uses local position
 uint posToCollisionIndex(uvec3 lp) {
-    uvec3 vp = divide_u3xu(lp,simFidelity);
+    uvec3 vp = div_u3xu(lp,simFidelity);
     uint full = simSize/simFidelity;
     return vp.x+full*(vp.y+full*vp.z);
 }

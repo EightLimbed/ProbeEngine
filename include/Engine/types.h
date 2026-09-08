@@ -19,6 +19,10 @@ typedef struct {
 } uvec2;
 
 typedef struct {
+  float x,y;
+} vec2;
+
+typedef struct {
   float x,y,z,w;
 } vec4;
 
@@ -46,7 +50,7 @@ vec3 add_f3xf(vec3 a, float b) {
   return c;
 }
 
-vec3 subtract_f3(vec3 a, vec3 b) {
+vec3 sub_f3(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.x-b.x;
   c.y = a.y-b.y;
@@ -54,7 +58,7 @@ vec3 subtract_f3(vec3 a, vec3 b) {
   return c;
 }
 
-ivec3 subtract_i3(ivec3 a, ivec3 b) {
+ivec3 sub_i3(ivec3 a, ivec3 b) {
   ivec3 c;
   c.x = a.x-b.x;
   c.y = a.y-b.y;
@@ -62,7 +66,7 @@ ivec3 subtract_i3(ivec3 a, ivec3 b) {
   return c;
 }
 
-vec3 multiply_f3xf3(vec3 a, vec3 b) {
+vec3 mult_f3xf3(vec3 a, vec3 b) {
   vec3 c;
   c.x = a.x*b.x;
   c.y = a.y*b.y;
@@ -70,7 +74,7 @@ vec3 multiply_f3xf3(vec3 a, vec3 b) {
   return c;
 }
 
-uvec3 divide_u3xu(uvec3 a, uint b) {
+uvec3 div_u3xu(uvec3 a, uint b) {
   uvec3 c;
   c.x = a.x/b;
   c.y = a.y/b;
@@ -91,7 +95,7 @@ vec3 glsl_modf3xf(vec3 a, float b) {
   return c;
 }
 
-vec3 multiply_f3xf(vec3 a, float f) {
+vec3 mult_f3xf(vec3 a, float f) {
   vec3 c;
   c.x = a.x*f;
   c.y = a.y*f;
@@ -157,6 +161,7 @@ vec3 cross(vec3 a, vec3 b) {
 
 vec3 normalize(vec3 a) {
   float len = sqrtf(a.x*a.x+a.y*a.y+a.z*a.z);
+  if (len == 0.0) len = 0.01; // 0 protection
   vec3 c;
   c.x = a.x/len;
   c.y = a.y/len;

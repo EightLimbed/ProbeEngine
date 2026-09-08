@@ -27,8 +27,8 @@ void updatecolliderData() {
 }
 
 float getColliderDist(vec3 p) {
-    uvec3 lp = getLocalPos(subtract_f3(add_f3xf(p,center), worldPos));
-    if (chunkData[posToChunkIndex(lp)]==unloaded) return 1.0; // safety
+    uvec3 lp = getLocalPos(sub_f3(add_f3xf(p,center), worldPos));
+    if (chunkData[posToChunkIndex(lp)]==unloaded) return (float)simFidelity; // safety
 
     uint index = posToCollisionIndex(lp);
     
@@ -43,7 +43,7 @@ float getColliderDist(vec3 p) {
 // gets collider dist for collisions
 float smoothColliderDist(vec3 p) {
     float s = (float)simFidelity;
-    vec3 f = multiply_f3xf(glsl_modf3xf(p,s), 1.0/s);
+    vec3 f = mult_f3xf(glsl_modf3xf(p,s), 1.0/s);
 
     // get all probes
     float d000 = getColliderDist(add_f3(p, (vec3){0,0,0}));
@@ -69,4 +69,25 @@ float smoothColliderDist(vec3 p) {
     float d = mixf(y0, y1, f.z);
 
     return d; // adjust for negative distances
+}
+
+vec3 getNormal(vec3 p) {
+    const float h = 1.0; // higher coefficient makes things look smoother
+    const vec2 k = {1.0,-1.0};
+    const vec3 kxyy = {k.x,k.y,k.y};
+    const vec3 kyyx = {k.y,k.y,k.x};
+    const vec3 kyxy = {k.y,k.x,k.y};
+    const vec3 kxxx = {k.x,k.x,k.x};
+
+    vec3 n = add_f3(
+        add_f3(
+            mult_f3xf(kxyy, smoothColliderDist(mult_f3xf(add_f3(p,kxyy),h))),
+            mult_f3xf(kyyx, smoothColliderDist(mult_f3xf(add_f3(p,kyyx),h)))
+        ),
+        add_f3(
+            mult_f3xf(kyxy, smoothColliderDist(mult_f3xf(add_f3(p,kyxy),h))),
+            mult_f3xf(kxxx, smoothColliderDist(mult_f3xf(add_f3(p,kxxx),h)))
+        )
+    );
+    return normalize(n);
 }
