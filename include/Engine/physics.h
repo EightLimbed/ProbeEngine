@@ -71,6 +71,24 @@ float smoothColliderDist(vec3 p) {
     return d; // adjust for negative distances
 }
 
+vec3 raycast(vec3 ro, vec3 rd, float maxDist) {
+    vec3 p;
+    float t = 0.0;
+    const uint raySteps = 160;
+    float e = 0.1;
+
+    for (int i = 0; i < raySteps; i++) {
+        p = add_f3(ro, mult_f3xf(rd, t));
+        float d = smoothColliderDist(p);
+
+        if (d<0.0) return p; // return position if hit
+        if (t>maxDist) return add_f3(ro, mult_f3xf(rd, maxDist)); // return max dist position
+
+        t+=maxf(d,0.1); // step ray
+    }
+    return ro; // nothing hit
+}
+
 vec3 getNormal(vec3 p) {
     const float h = 1.0; // higher coefficient makes things look smoother
     const vec2 k = {1.0,-1.0};

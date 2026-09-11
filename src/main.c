@@ -73,7 +73,7 @@ int main() {
   player player;
   {vec3 pos = {0.0,-100.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 100.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 6.0, 100.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
 
   // creates SSBOs
@@ -154,6 +154,7 @@ int main() {
     // handles player inputs
     playerInputs(&player,deltaTime);
     playerMouse(&player);
+    playerPhysics(&player);
     worldPos = getChunkPos(player.pos); // update world position
 
     // process other input
@@ -179,8 +180,8 @@ int main() {
         minDelta = 1e20f;
 
         // apply update
-        vec3 target = add_f3(player.pos,mult_f3xf(player.dir,16.0));
-        applyUpdate(target, player.mousePress, 0, 6.0, 7);
+        vec3 target = raycast(add_f3(player.pos,(vec3){0.0,player.height-3.0,0.0}), player.dir, 48.0);
+        applyUpdate(target, player.mousePress, 1, 6.0, 7);
         updatecolliderData();
     }
     //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);

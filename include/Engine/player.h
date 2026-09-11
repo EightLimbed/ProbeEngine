@@ -10,6 +10,9 @@ typedef struct {
   vec3 pos; // global position
   vec3 dir; // facing direction
   float gravity; // falling
+  float height; // height of player
+  float radius; // radius of player
+  float terminal; // terminal velocity of player
 
   // stats
   float speed;
@@ -31,10 +34,12 @@ typedef struct {
 
 } player;
 
-void initializePlayer(player *p, vec3 pos, vec3 dir, float speed, float sensitivity, GLFWwindow *window) {
+void initializePlayer(player *p, vec3 pos, vec3 dir, float height, float speed, float sensitivity, GLFWwindow *window) {
   p->pos = pos;
   p->dir = dir;
   p->speed = speed;
+  p->height = height;
+  p->radius = 1.8;
   p->window = window;
   p->sensitivity = sensitivity;
   p->pitch = asin(-p->dir.y);
@@ -43,6 +48,7 @@ void initializePlayer(player *p, vec3 pos, vec3 dir, float speed, float sensitiv
   p->omp = 0;
   p->mousePress = 0;
   p->gravity = 0;
+  p->terminal = 220.0;
 }
 
 void checkPlayer(player *p) {
@@ -68,7 +74,6 @@ void playerInputs(player *p, float deltaTime) {
   
   vec3 up = {0.0,1.0,0.0};
   vec3 right = normalize(cross(forward, up));
-  vec3 normal = getNormal(p->pos);
   //printf("Normal: (%f,%f,%f)\n",normal.x,normal.y,normal.z);
 
   // forward
@@ -93,35 +98,43 @@ void playerInputs(player *p, float deltaTime) {
 
   // up
   if (glfwGetKey(p->window,GLFW_KEY_SPACE)==GLFW_PRESS) {
-    p->pos.y += p->speed*deltaTime;
+    //p->pos.y += p->speed*deltaTime*5.0;
+    p->gravity = -100.0;
+    p->pos.y += 1.0;
   }
+
+  // handle gravity
+  p->pos.y -= p->gravity*deltaTime;
 
   // down
   if (glfwGetKey(p->window,GLFW_KEY_LEFT_SHIFT)==GLFW_PRESS) {
-    p->pos.y -= p->speed*deltaTime;
+    p->pos.y -= p->speed*deltaTime*5.0;
   }
 
   // teleport
   if (glfwGetKey(p->window,GLFW_KEY_P)==GLFW_PRESS) {
     p->pos = (vec3){128.0,0.0,128.0};
   }
+}
 
-  // amount of contact
-  float contact = smoothColliderDist(p->pos);
-  vec3 n = getNormal(p->pos);
-  if (contact<1.0) {
-    p->gravity = 0.0;
-    // max gradient to walk up
-    if (n.y>0.5) {
-      p->pos.y += contact-1.0;
+void playerPhysics(player *p) {
+  // contact points, 3 spheres stacked
+  vec3 colliders[3]={{0.0,-p->height,0.0},{0.0,-p->height/2,0.0},{0.0,0.0,0.0}};
+
+    // checks all spheres and resolves their collisions
+  for (int i = 0; i<3; i++) {
+    vec3 nPos = add_f3(p->pos, colliders[i]);
+    float contact = smoothColliderDist(nPos);
+    vec3 n = getNormal(nPos);
+
+    if (contact<p->radius) {
+      p->gravity = 0.0;
+      p->pos = add_f3(p->pos,mult_f3xf(n, fabs(contact-p->radius))); // colliding
     }
-    contact = smoothColliderDist(p->pos);
-    if (contact<1.0) p->pos = add_f3(p->pos,mult_f3xf(n, fabs(contact-1.0))); // still colliding
   }
 
   // handle gravity
-  p->pos.y -= p->gravity*deltaTime;
-  p->gravity = minf(980,p->gravity+9.8);
+  p->gravity = minf(p->terminal,p->gravity+9.8);
 }
 
 void playerMouse(player *p) {

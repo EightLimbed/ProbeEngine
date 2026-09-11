@@ -52,7 +52,7 @@ void setQueueWork(float targetFPS, float playerSpeed) {
     //float targetFPS = 60.0; // fps you are trying to hit
     float framesPerChunk = (float)chunkSize/playerSpeed*targetFPS; // amount of frames to cross a chunk at player speed
     printf("Frames to cross a chunk: %f\n", framesPerChunk);
-    uint frameChunksMax = viewSize*viewSize*2.7; // max amount of chunks that could be generated while walking
+    uint frameChunksMax = viewSize*viewSize*2.5; // max amount of chunks that could be generated while walking
     queueWork = frameChunksMax/(uint)framesPerChunk; // set queue work
     //printf("Work to do: %u\n",queueWork);
 }
