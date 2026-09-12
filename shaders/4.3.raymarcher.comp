@@ -150,7 +150,7 @@ vec4 smoothColor(vec3 p) {
 
 // Paulo Falcao technique
 vec3 getNormal(vec3 p) {
-    const float h = e*20.0; // higher coefficient makes things look smoother
+    const float h = e*40.0; // higher coefficient makes things look smoother
     const vec2 k = vec2(1.0,-1.0);
     
     return normalize(k.xyy*smoothDist(p+k.xyy*h) + 

@@ -32,7 +32,7 @@ const uint viewChunks = viewSize*viewSize*viewSize;
 
 const uint simSize = 8*32; // simulation distance in probes
 const uint simProbes = simSize*simSize*simSize;
-const uint simFidelity = 8; // amount to cut collision buffer detail by in each axis
+const uint simFidelity = 4; // amount to cut collision buffer detail by in each axis
 
 const uint allotedChunks = viewChunks/cut;
 const float axisSize = (float)(chunkSize*viewSize);
@@ -51,7 +51,8 @@ size_t ssbo2Size = (sizeof(GLuint)*(viewChunks)*2); // 0-viewChunks holds slots,
 uint* chunkData;
 
 GLuint ssbo3ID; // low res collision sdf
-size_t ssbo3Size = (sizeof(GLuint)*simProbes/(simFidelity*simFidelity*simFidelity)); // lower resolution probe grid for collisions
+const uint cubedSim = simFidelity*simFidelity*simFidelity;
+size_t ssbo3Size = (sizeof(GLuint)*(simProbes+cubedSim-1)/(cubedSim)); // lower resolution probe grid for collisions
 uint* colliderData;
 
 // functions
@@ -73,7 +74,7 @@ int main() {
   player player;
   {vec3 pos = {0.0,-100.0,0.0};
   vec3 dir = {0.0,0.0,1.0};
-  initializePlayer(&player, pos, dir, 6.0, 100.0, 0.005, window);}
+  initializePlayer(&player, pos, dir, 24.0, 100.0, 0.005, window);}
   worldPos = getChunkPos(player.pos); // update world position
 
   // creates SSBOs
@@ -174,13 +175,13 @@ int main() {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
     // terrain updates
-    if (player.mousePress != 0) {
+    if (player.mouseClick != 0) {
         // reset fps display stuff if necessary
         maxDelta = 0.0f;
         minDelta = 1e20f;
 
         // apply update
-        vec3 target = raycast(add_f3(player.pos,(vec3){0.0,player.height-3.0,0.0}), player.dir, 48.0);
+        vec3 target = raycast(add_f3(player.pos,(vec3){0.0,player.height/2.0-2,0.0}), player.dir, 128.0);
         applyUpdate(target, player.mousePress, 1, 6.0, 7);
         updatecolliderData();
     }

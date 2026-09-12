@@ -19,7 +19,7 @@ const uint generating = 0u; // currently generating
 // collider building
 const uint simSize = 8*32; // amount of chunks in simulation distance
 const uint simProbes = simSize*simSize*simSize;
-const uint simFidelity = 8; // amount to cut collision buffer detail by in each axis
+const uint simFidelity = 4; // amount to cut collision buffer detail by in each axis
 
 // rendering constants
 const int raySteps = 160;

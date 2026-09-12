@@ -118,23 +118,24 @@ void playerInputs(player *p, float deltaTime) {
 }
 
 void playerPhysics(player *p) {
+  // handle gravity
+  p->gravity = minf(p->terminal,p->gravity+9.8);
+
   // contact points, 3 spheres stacked
   vec3 colliders[3]={{0.0,-p->height,0.0},{0.0,-p->height/2,0.0},{0.0,0.0,0.0}};
 
-    // checks all spheres and resolves their collisions
+  // checks all spheres and resolves their collisions
   for (int i = 0; i<3; i++) {
     vec3 nPos = add_f3(p->pos, colliders[i]);
     float contact = smoothColliderDist(nPos);
-    vec3 n = getNormal(nPos);
+    vec3 normal = getNormal(nPos);
 
     if (contact<p->radius) {
-      p->gravity = 0.0;
-      p->pos = add_f3(p->pos,mult_f3xf(n, fabs(contact-p->radius))); // colliding
+      if (normal.y>0.5) p->gravity = 0.0;
+      else p->gravity = contact;
+      p->pos = add_f3(p->pos,mult_f3xf(normal, fabs(contact-p->radius))); // colliding
     }
   }
-
-  // handle gravity
-  p->gravity = minf(p->terminal,p->gravity+9.8);
 }
 
 void playerMouse(player *p) {

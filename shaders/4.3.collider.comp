@@ -46,7 +46,7 @@ void main() {
     uvec3 vp = gl_GlobalInvocationID; // position in collider space
     //if (clamp(vp, 0, (simSize-1)/simFidelity) != vp) return; // overflow
 
-    uvec3 lp = getLocalPos(vp*simFidelity-center-simSize/2,worldPos); // local position, spread and centered
+    uvec3 lp = getLocalPos(vp*simFidelity-center-float(simSize)/2.0,worldPos); // local position, spread and centered
     uint probePacked = getProbePacked(posToIndex(lp)); // gets packed probe at local position
 
     setProbePacked(posToCollisionIndex(lp), probePacked); // sets packed probe at collider position

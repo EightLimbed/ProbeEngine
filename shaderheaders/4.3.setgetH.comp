@@ -67,7 +67,7 @@ void setMaterial(uint index, uint m) {
 // gets probe with 8 bit packing
 float getProbe(uint index) {
     //uint index = posToIndex(lp);
-    if (index == unloaded) return 1.0; // safety for empties, 1.0 seems to work, likely because chunk clamping off by around this
+    if (index == unloaded) return 0.2; // safety for empties, 1.0 seems to work, likely because chunk clamping off by around this
 
     uint uintIndex = index >> 2u;
     uint subIndex = index & 3u;
