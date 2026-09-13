@@ -13,6 +13,11 @@ uniform int screenHeight = 1;
 
 void main() {
     vec2 uv = gl_FragCoord.xy / vec2(screenWidth, screenHeight);
-    vec4 c = texture(depthMap, uv);
-    FragColor = c*(1-c.w/renderDist);
+    vec4 color = texture(colorMap, uv);
+    vec4 depth = texture(depthMap, uv);
+    vec3 normal = depth.xyz;
+    float shadow = max(dot(normal,vec3(1.0)),0.3); // basic shading
+    float fog = pow(depth.w*1.1/renderDist,15.0);
+
+    FragColor = (depth.w<renderDist) ? mix(color*shadow,sky,fog) : sky;
 }

@@ -182,7 +182,7 @@ int main() {
         minDelta = 1e20f;
 
         // apply update
-        vec3 target = raycast(add_f3(player.pos,(vec3){0.0,player.height/2.0-2,0.0}), player.dir, 128.0);
+        vec3 target = raycast(player.pos, player.dir, 128.0);
         applyUpdate(target, player.mousePress, 1, 6.0, 7);
         updatecolliderData();
     }

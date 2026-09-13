@@ -26,3 +26,4 @@ const int raySteps = 160;
 const float e = 0.01; // max precision of 8 bit float
 const float renderDist = float(viewSize*chunkSize)/2.1; // max ray distance
 const float dMin = -1.41421356237; // important to allow negative sdf distance data encoding.
+const vec4 sky = vec4(0.0,0.4,1.0,1.0);
