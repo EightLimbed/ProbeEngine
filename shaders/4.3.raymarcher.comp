@@ -25,7 +25,9 @@ uniform vec3 worldPos;
 uniform vec3 pDir = vec3(0.0,0.0,1.0);
 
 // screen data
-layout(rgba32f, binding=0) uniform writeonly image2D screen;
+layout(rgba32f, binding=0) uniform writeonly image2D colorMap;
+layout(rgba32f, binding=1) uniform writeonly image2D depthMap;
+
 uniform int screenWidth = 1;
 uniform int screenHeight = 1;
 uniform float iTime;
@@ -150,7 +152,7 @@ vec4 smoothColor(vec3 p) {
 
 // Paulo Falcao technique
 vec3 getNormal(vec3 p) {
-    const float h = e*40.0; // higher coefficient makes things look smoother
+    const float h = e*80.0; // higher coefficient makes things look smoother
     const vec2 k = vec2(1.0,-1.0);
     
     return normalize(k.xyy*smoothDist(p+k.xyy*h) + 
@@ -209,23 +211,24 @@ void main() {
             collect = min(collect, 0.5);
         }
 
+        t+=min(max(d,e),cd); // step ray
+
         // hit
         if (d < e) { 
             // coloring and stuff
             //t/float(full)*2.1
+            vec3 normal = getNormal(p);
             float falloff = min(
                             max((t*1.1)/renderDist,
                                 float(i)/float(raySteps))
                             ,1.0);
-            float shadow = max(dot(getNormal(p),vec3(1.0)),0.3); // basic shading
+            float shadow = max(dot(normal,vec3(1.0)),0.3); // basic shading
             vec4 color = smoothColor(p);
-            //if (getColliderDist(p) < e) color = vec4(1.0);
 
-            imageStore(screen, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),pow(falloff, 18.0))+collect);
+            imageStore(colorMap, fragCoord, mix(color*shadow,vec4(0.0,0.4,1.0,1.0),pow(falloff, 18.0))+collect);
+            imageStore(depthMap, fragCoord, vec4(normal,t));
             return;
         }
-
-        t+=min(max(d,e),cd); // step ray
     }
-    imageStore(screen, fragCoord, vec4(0.0,0.4,1.0,1.0)+collect);
+    imageStore(colorMap, fragCoord, vec4(0.0,0.4,1.0,1.0)+collect);
 }

@@ -21,7 +21,8 @@ GLuint ColliderID; // stage that gets collision surface around player.
 GLuint ResetID; // index occupancy resetter
 
 // textures
-GLuint screenTex; // screen
+GLuint colorTex; // screen colors
+GLuint depthTex; // depth and surface normal data
 
 // chunk data stuff
 const uint cut = 10; // amount to divide max memory by
@@ -221,12 +222,6 @@ int main() {
 }
 
 void updateSettings() {
-    // screen texture (screen color data).
-    glGenTextures(1, &screenTex);
-    glBindTexture(GL_TEXTURE_2D, screenTex);
-    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
-    glBindImageTexture(0, screenTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
     // sets raymarcher screen sizes
     shaderSetInt(MarcherID, "screenWidth", screenWidth);
     shaderSetInt(MarcherID, "screenHeight", screenHeight);
@@ -235,10 +230,29 @@ void updateSettings() {
     shaderSetInt(ScreenID, "screenWidth", screenWidth);
     shaderSetInt(ScreenID, "screenHeight", screenHeight);
 
-    // set sampler uniform
+    // screen texture (screen color data).
+    glGenTextures(1, &colorTex);
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
+    glBindImageTexture(0, colorTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    // depth texture (depth and normal data).
+    glGenTextures(1, &depthTex);
+    glBindTexture(GL_TEXTURE_2D, depthTex);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
+    glBindImageTexture(1, depthTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    glUseProgram(ScreenID); // use screen so the following are set
+
+    // set color sampler uniform
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, screenTex);
-    glUniform1i(glGetUniformLocation(ScreenID, "screen"), 0);
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    glUniform1i(glGetUniformLocation(ScreenID, "colorMap"), 0);
+
+    // set depth sampler uniform
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthTex);
+    glUniform1i(glGetUniformLocation(ScreenID, "depthMap"), 1);
 }
 
 void processInput(GLFWwindow *window) {
