@@ -1,0 +1,35 @@
+#version 440 core
+
+layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
+
+layout(std430, binding = 0) buffer ProbeData {
+    uint probeData[];
+};
+
+layout(std430, binding = 1) buffer MaterialData {
+    uint materialData[];
+};
+
+layout(std430, binding = 2) buffer ChunkData {
+    uint chunkData[];
+};
+
+layout(binding = 1) uniform sampler2D depthMap; // depth and normal map
+layout(rgba32f, binding=2) uniform writeonly image3D lightMap; // lighting map
+
+uniform int screenWidth = 1;
+uniform int screenHeight = 1;
+uniform int screenWidthLight = 1;
+uniform int screenHeightLight = 1;
+uniform int lightSamples = 1;
+
+//include shaderheaders/4.3.constantsH.comp
+
+void main() {
+    ivec3 fragCoord = ivec3(gl_GlobalInvocationID.xyz); // light screen coordinates
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(screenWidthLight, screenHeightLight); // sample from normal screen coords
+    vec4 depth = texture(depthMap, uv);
+    vec3 normal = depth.xyz;
+
+    imageStore(lightMap, fragCoord, vec4(max(dot(normal,vec3(1.0)),0.3)));
+}

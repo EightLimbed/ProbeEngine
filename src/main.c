@@ -14,32 +14,43 @@ int screenHeight = 600;
 // shaders
 GLuint ScreenID; // screenshader
 GLuint MarcherID; // raymarcher
+GLuint LightingID; // lighting pass 
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
 GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
 GLuint ColliderID; // stage that gets collision surface around player.
 GLuint ResetID; // index occupancy resetter
 
-// textures
+// screen textures
 GLuint colorTex; // screen colors
 GLuint depthTex; // depth and surface normal data
+GLuint lightTex; // lighting data
+
+// lighting
+const uint lightSamples = 4; // samples for lighting
+const uint lightFidelity = 4; // fidelity of lighting (is smoothed), 1 highest
+int screenWidthLight;
+int screenHeightLight;
 
 // chunk data stuff
-const uint cut = 10; // amount to divide max memory by
+const uint chunkCut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
 const uint viewSize = 32; // world size in chunks
 const uint viewChunks = viewSize*viewSize*viewSize;
 
+// collisions stuff
 const uint simSize = 8*32; // simulation distance in probes
 const uint simProbes = simSize*simSize*simSize;
 const uint simFidelity = 4; // amount to cut collision buffer detail by in each axis
 
-const uint allotedChunks = viewChunks/cut;
+// world stuff
+const uint allotedChunks = viewChunks/chunkCut;
 const float axisSize = (float)(chunkSize*viewSize);
 const float center = (float)(viewSize/2.0)*(float)chunkSize;
 vec3 worldPos; // position of world, for local positioning
 
+// ssbos
 GLuint ssbo0ID; // probe data
 size_t ssbo0Size = (sizeof(GLuint)*allotedChunks*chunkProbes+3)/4; // /4 for bitpacking, 8 bit floats
 uint* surfaceData; // chunk mapping persistently mapped data pointer
@@ -59,7 +70,7 @@ uint* colliderData;
 // functions
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void updateSettings();
+void updateScreenSettings();
 
 int main() {
   // creates a window
@@ -90,6 +101,9 @@ int main() {
   shaderCompile(&MarcherID, GL_COMPUTE_SHADER, "shaders/4.3.raymarcher.comp");
   MarcherID = linkComputeShader(MarcherID);
 
+  shaderCompile(&LightingID, GL_COMPUTE_SHADER, "shaders/4.3.lighting.comp");
+  LightingID = linkComputeShader(LightingID);
+
   { // screen shader
     GLuint vID;
     GLuint fID ;
@@ -119,7 +133,7 @@ int main() {
   ColliderID = linkComputeShader(ColliderID);
   
   // updates settings to make sure everything is correct
-  updateSettings();
+  updateScreenSettings();
 
   // bind vertex arrays (very important)
   GLuint vao;
@@ -159,22 +173,6 @@ int main() {
     playerPhysics(&player);
     worldPos = getChunkPos(player.pos); // update world position
 
-    // process other input
-    processInput(window);
-
-    //glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    //glClear(GL_COLOR_BUFFER_BIT);
-
-    // raymarch
-    shaderSetVec3(MarcherID, "pPos", player.pos); // sets player stuff
-    shaderSetVec3(MarcherID, "worldPos", worldPos); // sets player stuff
-    shaderSetVec3(MarcherID, "pDir", player.dir);
-    shaderSetFloat(MarcherID, "iTime", currentTime);
-    
-    glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
-
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
-
     // terrain updates
     if (player.mouseClick != 0) {
         // reset fps display stuff if necessary
@@ -203,6 +201,30 @@ int main() {
     // apply terrain gen
     followChunkQueue();
 
+    // process other input
+    processInput(window);
+
+    // raymarch
+    glUseProgram(MarcherID);
+    shaderSetVec3(MarcherID, "pPos", player.pos); // sets player stuff
+    shaderSetVec3(MarcherID, "worldPos", worldPos); // sets player stuff
+    shaderSetVec3(MarcherID, "pDir", player.dir);
+    shaderSetFloat(MarcherID, "iTime", currentTime);
+    
+    glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
+    // lighting
+    glUseProgram(LightingID);
+    shaderSetVec3(LightingID, "pPos", player.pos); // sets player stuff
+    shaderSetVec3(LightingID, "pDir", player.dir);
+    shaderSetFloat(LightingID, "iTime", currentTime);
+    
+    glDispatchCompute((screenWidthLight+3)/4,(screenHeightLight+3)/4,(lightSamples+3)/4);
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
     // screen
     glUseProgram(ScreenID);
 
@@ -221,14 +243,28 @@ int main() {
   return 0;
 }
 
-void updateSettings() {
+void updateScreenSettings() {
+    screenWidthLight = (screenWidth+lightFidelity-1)/lightFidelity;
+    screenHeightLight = (screenHeight+lightFidelity-1)/lightFidelity;
+
+    // sets fragment shader screen sizes
+    glUseProgram(ScreenID);
+    shaderSetInt(ScreenID, "screenWidth", screenWidth);
+    shaderSetInt(ScreenID, "screenHeight", screenHeight);
+    shaderSetInt(ScreenID, "lightFidelity", lightFidelity); // light fidelity
+
     // sets raymarcher screen sizes
+    glUseProgram(MarcherID);
     shaderSetInt(MarcherID, "screenWidth", screenWidth);
     shaderSetInt(MarcherID, "screenHeight", screenHeight);
 
-    // sets fragment shader screen sizes
-    shaderSetInt(ScreenID, "screenWidth", screenWidth);
-    shaderSetInt(ScreenID, "screenHeight", screenHeight);
+    // sets lighting shader screen sizes
+    glUseProgram(LightingID);
+    shaderSetInt(LightingID, "screenWidthLight", screenWidthLight);
+    shaderSetInt(LightingID, "screenHeightLight", screenHeightLight);
+    shaderSetInt(LightingID, "screenWidth", screenWidth);
+    shaderSetInt(LightingID, "screenHeight", screenHeight);
+    shaderSetInt(LightingID, "lightSamples", lightSamples);
 
     // screen texture (screen color data).
     glGenTextures(1, &colorTex);
@@ -242,17 +278,33 @@ void updateSettings() {
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
     glBindImageTexture(1, depthTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-    glUseProgram(ScreenID); // use screen so the following are set
+    // lighting texture (colored lighting). 3D texture, each layer is a pass
+    glGenTextures(1, &lightTex);
+    glBindTexture(GL_TEXTURE_3D, lightTex);
+    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, screenWidthLight, screenHeightLight, lightSamples);
+    glBindImageTexture(2, lightTex, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-    // set color sampler uniform
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, colorTex);
-    glUniform1i(glGetUniformLocation(ScreenID, "colorMap"), 0);
-
-    // set depth sampler uniform
-    glActiveTexture(GL_TEXTURE1);
+    // set lighting image stuff
+    glUseProgram(depthTex);
+    
+    glActiveTexture(GL_TEXTURE1); // set depth sampler uniform
     glBindTexture(GL_TEXTURE_2D, depthTex);
-    glUniform1i(glGetUniformLocation(ScreenID, "depthMap"), 1);
+    shaderSetInt(ScreenID, "depthMap", 1);
+
+    // set screen image stuff
+    glUseProgram(ScreenID);
+
+    glActiveTexture(GL_TEXTURE0); // set color sampler uniform
+    glBindTexture(GL_TEXTURE_2D, colorTex);
+    shaderSetInt(ScreenID, "colorMap", 0);
+
+    glActiveTexture(GL_TEXTURE1); // set depth sampler uniform
+    glBindTexture(GL_TEXTURE_2D, depthTex);
+    shaderSetInt(ScreenID, "depthMap", 1);
+
+    glActiveTexture(GL_TEXTURE2); // set light sampler uniform
+    glBindTexture(GL_TEXTURE_3D, lightTex);
+    shaderSetInt(ScreenID, "lightMap", 2);
 }
 
 void processInput(GLFWwindow *window) {
@@ -271,7 +323,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
     printf("Screen resized to: (%d, %d).\n", width, height);
     screenWidth = width;
     screenHeight = height;
-    updateSettings(); // updates settings based on new values.
+
+    updateScreenSettings(); // updates settings based on new values.
 
     // make sure the viewport matches the new window dimensions; note that width and height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height); // resize viewport

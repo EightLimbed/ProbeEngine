@@ -6,7 +6,7 @@
 #include <Engine/setget.h>
 
 // memory data
-extern const uint cut;
+extern const uint chunkCut;
 extern const uint allotedChunks;
 
 // world specs

@@ -215,22 +215,22 @@ GLuint linkComputeShader(GLuint computeShader) {
 }
 
 void shaderSetFloat(GLuint ID, const char* name, float value) {
-    glUseProgram(ID);
+    //glUseProgram(ID);
     glUniform1f(glGetUniformLocation(ID, name), value);
 }
 
 void shaderSetUint(GLuint ID, const char* name, unsigned int value) {
-    glUseProgram(ID);
+    //glUseProgram(ID);
     glUniform1ui(glGetUniformLocation(ID, name), value);
 }
 
 void shaderSetInt(GLuint ID, const char* name, int value) {
-    glUseProgram(ID);
+    //glUseProgram(ID);
     glUniform1i(glGetUniformLocation(ID, name), value);
 }
 
 void shaderSetVec3(GLuint ID, const char* name, vec3 value) {
-    glUseProgram(ID);
+    //glUseProgram(ID);
     glUniform3f(glGetUniformLocation(ID, name), value.x, value.y, value.z);
 }
 
