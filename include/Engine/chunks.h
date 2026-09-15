@@ -148,9 +148,11 @@ void followChunkQueue() {
         generateChunk(chunkQueue[queueTail]); // generates chunk last added
     }
     // generates until done, or until needed amount is hit
-    else for (int i = 0; i < queueWork; i++) {
-        if (queueSize <=0u) break;
-        generateChunk(chunkQueue[queueTail]); // generates chunk last added
+    else {
+        for (int i = 0; i < queueWork; i++) {
+            if (queueSize <=0u) break;
+            generateChunk(chunkQueue[queueTail]); // generates chunk last added
+        }
     }
 }
 

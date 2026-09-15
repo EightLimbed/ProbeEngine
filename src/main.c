@@ -267,18 +267,21 @@ void updateScreenSettings() {
     shaderSetInt(LightingID, "lightSamples", lightSamples);
 
     // screen texture (screen color data).
+    glDeleteTextures(1, &colorTex);
     glGenTextures(1, &colorTex);
     glBindTexture(GL_TEXTURE_2D, colorTex);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
     glBindImageTexture(0, colorTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     // depth texture (depth and normal data).
+    glDeleteTextures(1, &depthTex);
     glGenTextures(1, &depthTex);
     glBindTexture(GL_TEXTURE_2D, depthTex);
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
     glBindImageTexture(1, depthTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     // lighting texture (colored lighting). 3D texture, each layer is a pass
+    glDeleteTextures(1, &lightTex);
     glGenTextures(1, &lightTex);
     glBindTexture(GL_TEXTURE_3D, lightTex);
     glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, screenWidthLight, screenHeightLight, lightSamples);
@@ -304,6 +307,7 @@ void updateScreenSettings() {
 
     glActiveTexture(GL_TEXTURE2); // set light sampler uniform
     glBindTexture(GL_TEXTURE_3D, lightTex);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     shaderSetInt(ScreenID, "lightMap", 2);
 }
 
