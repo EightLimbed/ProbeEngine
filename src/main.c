@@ -28,7 +28,7 @@ GLuint lightTex; // lighting data
 
 // lighting
 const uint lightSamples = 4; // samples for lighting
-const uint lightFidelity = 4; // fidelity of lighting (is smoothed), 1 highest
+uint lightFidelity = 4; // fidelity of lighting (is smoothed), 1 highest
 int screenWidthLight;
 int screenHeightLight;
 
@@ -175,15 +175,12 @@ int main() {
 
     // terrain updates
     if (player.mouseClick != 0) {
-        // reset fps display stuff if necessary
-        maxDelta = 0.0f;
-        minDelta = 1e20f;
-
         // apply update
         vec3 target = raycast(player.pos, player.dir, 128.0);
-        applyUpdate(target, player.mousePress, 1, 6.0, 7);
+        applyUpdate(target, player.mousePress, 0, 6.0, 7);
         updatecolliderData();
     }
+
     //printf("World Position: (%2f, %2f, %2f)\n", worldPos.x, worldPos.y, worldPos.z);
 
     // terrain gen
@@ -228,6 +225,23 @@ int main() {
     // screen
     glUseProgram(ScreenID);
 
+    if (glfwGetKey(window,GLFW_KEY_R)==GLFW_PRESS) {
+        // reset fps display stuff if necessary
+        maxDelta = 0.0f;
+        minDelta = 1e20f;
+        shaderSetInt(ScreenID, "smoothing", 0);
+        if (lightFidelity != 1) {
+        lightFidelity = 1;
+        updateScreenSettings();
+        }
+    } else {
+        shaderSetInt(ScreenID, "smoothing", 1);
+        if (lightFidelity != 4) {
+        lightFidelity = 4;
+        updateScreenSettings();
+        }
+    }
+
     // draw triangles
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -252,6 +266,7 @@ void updateScreenSettings() {
     shaderSetInt(ScreenID, "screenWidth", screenWidth);
     shaderSetInt(ScreenID, "screenHeight", screenHeight);
     shaderSetInt(ScreenID, "lightFidelity", lightFidelity); // light fidelity
+    shaderSetInt(ScreenID, "lightSamples", lightSamples);
 
     // sets raymarcher screen sizes
     glUseProgram(MarcherID);

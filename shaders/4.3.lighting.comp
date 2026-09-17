@@ -31,5 +31,5 @@ void main() {
     vec4 depth = texture(depthMap, uv);
     vec3 normal = depth.xyz;
 
-    imageStore(lightMap, fragCoord, vec4(max(dot(normal,vec3(1.0)),0.3)));
+    imageStore(lightMap, fragCoord, vec4(max(dot(normal,vec3(1.0)),0.8)));
 }
