@@ -32,3 +32,39 @@ float repeated2D(vec3 p3, float s, float l) {
     }
     return d;
 }
+
+// smooths lighting with radial kernel that stops at edges
+vec4 smoothLighting(vec2 uv, float angles, float radius, float jump) {
+    float accumulate = 0.0; // sum of weights for averaging color
+    vec4 color = vec4(0.0); // accumulated color
+    vec4 reference = texture(depthMap, uv); // reference depth and normal value
+    vec4 refColor = averagePasses(uv);
+    float invangles = 1.0/angles; // inverse angles to avoid excess division
+    // each angle
+    for (float c = 0.0; c<angles; c+=1.0) {
+        // gets angle
+        float angle = TwoPI*invangles*c;
+        // gets vector direction from angle, then fits to screen
+        vec2 dir = vec2(cos(angle),sin(angle));
+        vec2 udir = dir/vec2(screenWidth, screenHeight);
+
+        // radiate from angles
+        for (float r = jump; r < radius; r+=jump) {
+            // get updated uvs
+            vec2 uuv = uv+udir*r;
+
+            // get depth and normal
+            vec4 nDepth = texture(depthMap, uv); // depth and normal value to be compared
+            float dWeight = 1.0-abs(reference.w-nDepth.w)*4;
+            float nWeight = dot(nDepth.xyz, reference.xyz);
+
+            // if edge too harsh, break
+            if (dWeight<0.0||nWeight<0.5) break;
+
+            // accumulate and average color based on normals
+            color += averagePasses(uuv)*nWeight;
+            accumulate += nWeight;
+        }
+    }
+    return color/accumulate;
+}

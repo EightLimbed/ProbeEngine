@@ -28,9 +28,6 @@ GLuint lightTex; // lighting data
 
 // lighting
 const uint lightSamples = 4; // samples for lighting
-uint lightFidelity = 4; // fidelity of lighting (is smoothed), 1 highest
-int screenWidthLight;
-int screenHeightLight;
 
 // chunk data stuff
 const uint chunkCut = 10; // amount to divide max memory by
@@ -64,7 +61,7 @@ uint* chunkData;
 
 GLuint ssbo3ID; // low res collision sdf
 const uint cubedSim = simFidelity*simFidelity*simFidelity;
-size_t ssbo3Size = (sizeof(GLuint)*(simProbes+cubedSim-1)/(cubedSim)); // lower resolution probe grid for collisions
+size_t ssbo3Size = (sizeof(GLuint)*(simProbes+cubedSim)/(cubedSim)); // lower resolution probe grid for collisions
 uint* colliderData;
 
 // functions
@@ -163,7 +160,7 @@ int main() {
     lastTime = currentTime;
 
     // fps display
-    //printf("FPS: %.2f \nMin FPS: %.2f \nMax FPS: %.2f\n\033[3A\r",1.0/deltaTime, 1.0/maxDelta, 1.0/minDelta);
+    printf("FPS: %.2f \nMin FPS: %.2f \nMax FPS: %.2f\n\033[3A\r",1.0/deltaTime, 1.0/maxDelta, 1.0/minDelta);
     if (deltaTime>maxDelta) maxDelta = deltaTime;
     if (deltaTime<minDelta) minDelta = deltaTime;
 
@@ -218,7 +215,7 @@ int main() {
     shaderSetVec3(LightingID, "pDir", player.dir);
     shaderSetFloat(LightingID, "iTime", currentTime);
     
-    glDispatchCompute((screenWidthLight+3)/4,(screenHeightLight+3)/4,(lightSamples+3)/4);
+    glDispatchCompute((screenWidth+3)/4,(screenHeight+3)/4,(lightSamples+3)/4);
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -229,19 +226,7 @@ int main() {
         // reset fps display stuff if necessary
         maxDelta = 0.0f;
         minDelta = 1e20f;
-        shaderSetInt(ScreenID, "smoothing", 0);
-        if (lightFidelity != 1) {
-        lightFidelity = 1;
-        updateScreenSettings();
-        }
-    } else {
-        shaderSetInt(ScreenID, "smoothing", 1);
-        if (lightFidelity != 4) {
-        lightFidelity = 4;
-        updateScreenSettings();
-        }
     }
-
     // draw triangles
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
@@ -258,14 +243,11 @@ int main() {
 }
 
 void updateScreenSettings() {
-    screenWidthLight = (screenWidth+lightFidelity-1)/lightFidelity;
-    screenHeightLight = (screenHeight+lightFidelity-1)/lightFidelity;
 
     // sets fragment shader screen sizes
     glUseProgram(ScreenID);
     shaderSetInt(ScreenID, "screenWidth", screenWidth);
     shaderSetInt(ScreenID, "screenHeight", screenHeight);
-    shaderSetInt(ScreenID, "lightFidelity", lightFidelity); // light fidelity
     shaderSetInt(ScreenID, "lightSamples", lightSamples);
 
     // sets raymarcher screen sizes
@@ -275,8 +257,6 @@ void updateScreenSettings() {
 
     // sets lighting shader screen sizes
     glUseProgram(LightingID);
-    shaderSetInt(LightingID, "screenWidthLight", screenWidthLight);
-    shaderSetInt(LightingID, "screenHeightLight", screenHeightLight);
     shaderSetInt(LightingID, "screenWidth", screenWidth);
     shaderSetInt(LightingID, "screenHeight", screenHeight);
     shaderSetInt(LightingID, "lightSamples", lightSamples);
@@ -299,7 +279,7 @@ void updateScreenSettings() {
     glDeleteTextures(1, &lightTex);
     glGenTextures(1, &lightTex);
     glBindTexture(GL_TEXTURE_3D, lightTex);
-    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, screenWidthLight, screenHeightLight, lightSamples);
+    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, screenWidth, screenHeight, lightSamples);
     glBindImageTexture(2, lightTex, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     // set lighting image stuff

@@ -48,6 +48,9 @@ const uint generating = 0u; // currently generating
 double countTime = 0.0; // total time spent generating chunks
 double genCount = 0.0; // amount of chunks generated
 
+// player movement flag when throttling
+int throttle = 0;
+
 void setQueueWork(float targetFPS, float playerSpeed) {
     //float targetFPS = 60.0; // fps you are trying to hit
     float framesPerChunk = (float)chunkSize/playerSpeed*targetFPS; // amount of frames to cross a chunk at player speed
@@ -142,10 +145,13 @@ void generateChunk(vec3 cPos) {
 }
 
 void followChunkQueue() {
+    throttle = 0;
     // throttles if too much work, and just does it all
-    if (queueSize>viewChunks/2)  // arbitratry value can be tuned
+    if (queueSize>viewChunks/2) { // arbitratry value can be tuned
+        throttle = 1;
         while (queueSize>0) {
-        generateChunk(chunkQueue[queueTail]); // generates chunk last added
+            generateChunk(chunkQueue[queueTail]); // generates chunk last added
+        }
     }
     // generates until done, or until needed amount is hit
     else {

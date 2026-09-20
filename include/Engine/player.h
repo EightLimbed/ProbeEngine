@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <Engine/physics.h>
 
+extern int throttle; // if throttling, stop player movement.
+
 typedef struct {
   // physical
   vec3 pos; // global position
@@ -67,6 +69,12 @@ void clampPlayer(player *p, vec3 A, vec3 B) {
 }
 
 void playerInputs(player *p, float deltaTime) {
+
+  // handle throttling
+  if (throttle == 1) {
+    p->gravity = 0;
+    return;
+  }
   //printf("Dist to Surface: %f\r", smoothColliderDist(p->pos));
   // gets forward direction
   vec3 forward = {p->dir.x, 0.0, p->dir.z};

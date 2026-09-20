@@ -212,8 +212,8 @@ void main() {
         if (d < e) { 
             // coloring and stuff
             vec3 normal = getNormal(p);
-            float edge = pow(float(i)/float(raySteps),15.0);
-            vec4 color = smoothColor(p);
+            float edge = pow(float(i)/float(raySteps),8.0);
+            vec4 color = smoothColor(p);//*vec4(max(dot(normal,vec3(1.0)),0.8));
 
             imageStore(colorMap, fragCoord, mix(color,sky,edge));
             imageStore(depthMap, fragCoord, vec4(normal,t));
@@ -221,4 +221,5 @@ void main() {
         }
     }
     imageStore(depthMap, fragCoord, vec4(vec3(1.0),renderDist));
+    imageStore(colorMap, fragCoord, sky);
 }

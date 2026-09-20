@@ -19,15 +19,13 @@ layout(rgba32f, binding=2) uniform writeonly image3D lightMap; // lighting map
 
 uniform int screenWidth = 1;
 uniform int screenHeight = 1;
-uniform int screenWidthLight = 1;
-uniform int screenHeightLight = 1;
 uniform int lightSamples = 1;
 
 //include shaderheaders/4.3.constantsH.comp
 
 void main() {
     ivec3 fragCoord = ivec3(gl_GlobalInvocationID.xyz); // light screen coordinates
-    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(screenWidthLight, screenHeightLight); // sample from normal screen coords
+    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(screenWidth, screenHeight); // sample from normal screen coords
     vec4 depth = texture(depthMap, uv);
     vec3 normal = depth.xyz;
 
