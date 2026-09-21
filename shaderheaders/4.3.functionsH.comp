@@ -20,3 +20,15 @@ float hash(vec3 p3) {
     p3 += dot(p3, p3.yzx + 33.33);
     return fract((p3.x + p3.y) * p3.z);
 }
+
+// basic 3d hash function
+vec3 hash3(vec3 p) {
+    p = fract(p * vec3(443.897, 441.423, 437.195));
+    p += dot(p, p.yxz + 19.19);
+    return fract(vec3((p.x + p.y) * p.z, (p.x + p.z) * p.y, (p.y + p.z) * p.x)) * 2.0 - 1.0;
+}
+
+// fast random unit vector approximation
+vec3 randomUnitVector(vec3 p) {
+    return normalize(tan(hash3(p)));
+}

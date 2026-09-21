@@ -88,7 +88,7 @@ uint getMaterial(uint index) {
 
 // sets chunk flag, uses last index of chunkData to store.
 void updateStoreFlag(float d, uint slot) {
-    if (d>dMin && d<e) chunkData[viewChunks+slot] = stored;
+    if (d>dMin && d<1.0) chunkData[viewChunks+slot] = stored;
 }
 
 // gets storing flag

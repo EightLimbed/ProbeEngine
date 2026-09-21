@@ -28,6 +28,10 @@ GLuint lightTex; // lighting data
 
 // lighting
 const uint lightSamples = 4; // samples for lighting
+const uint lightFrames = 4;
+const uint lightFidelity = 4;
+int screenHeightLight;
+int screenWidthLight;
 
 // chunk data stuff
 const uint chunkCut = 10; // amount to divide max memory by
@@ -148,6 +152,9 @@ int main() {
   float maxDelta = 0.0f;
   float minDelta = 1e20f;
 
+  // lighting frame
+  int lightFrame = 0;
+
   // old world pos for shifting
   vec3 owp = worldPos;
 
@@ -210,12 +217,15 @@ int main() {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
     // lighting
+    lightFrame = (lightFrame+1)%lightFrames;
     glUseProgram(LightingID);
+    shaderSetVec3(LightingID, "worldPos", worldPos); // sets player stuff
     shaderSetVec3(LightingID, "pPos", player.pos); // sets player stuff
     shaderSetVec3(LightingID, "pDir", player.dir);
     shaderSetFloat(LightingID, "iTime", currentTime);
+    shaderSetInt(LightingID, "lightFrame", lightFrame);
     
-    glDispatchCompute((screenWidth+3)/4,(screenHeight+3)/4,(lightSamples+3)/4);
+    glDispatchCompute((screenWidthLight+3)/4,(screenHeightLight+3)/4,(lightSamples+3)/4);
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
@@ -243,12 +253,15 @@ int main() {
 }
 
 void updateScreenSettings() {
+    screenWidthLight = (screenWidth+lightFidelity-1)/lightFidelity;
+    screenHeightLight = (screenHeight+lightFidelity-1)/lightFidelity;
 
     // sets fragment shader screen sizes
     glUseProgram(ScreenID);
     shaderSetInt(ScreenID, "screenWidth", screenWidth);
     shaderSetInt(ScreenID, "screenHeight", screenHeight);
     shaderSetInt(ScreenID, "lightSamples", lightSamples);
+    shaderSetInt(ScreenID, "lightFrames", lightFrames);
 
     // sets raymarcher screen sizes
     glUseProgram(MarcherID);
@@ -257,8 +270,8 @@ void updateScreenSettings() {
 
     // sets lighting shader screen sizes
     glUseProgram(LightingID);
-    shaderSetInt(LightingID, "screenWidth", screenWidth);
-    shaderSetInt(LightingID, "screenHeight", screenHeight);
+    shaderSetInt(LightingID, "screenWidth", screenWidthLight);
+    shaderSetInt(LightingID, "screenHeight", screenHeightLight);
     shaderSetInt(LightingID, "lightSamples", lightSamples);
 
     // screen texture (screen color data).
@@ -279,7 +292,7 @@ void updateScreenSettings() {
     glDeleteTextures(1, &lightTex);
     glGenTextures(1, &lightTex);
     glBindTexture(GL_TEXTURE_3D, lightTex);
-    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, screenWidth, screenHeight, lightSamples);
+    glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, screenWidthLight, screenHeightLight, lightSamples*lightFrames);
     glBindImageTexture(2, lightTex, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     // set lighting image stuff

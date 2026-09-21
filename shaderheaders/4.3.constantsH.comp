@@ -23,6 +23,7 @@ const uint simFidelity = 4; // amount to cut collision buffer detail by in each 
 
 // rendering constants
 const int raySteps = 160;
+const int lightSteps = 60;
 const float e = 0.01; // max precision of 8 bit float
 const float renderDist = float(viewSize*chunkSize)/2.1; // max ray distance
 const float dMin = -1.41421356237; // important to allow negative sdf distance data encoding.
