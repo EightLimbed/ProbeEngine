@@ -27,9 +27,9 @@ GLuint depthTex; // depth and surface normal data
 GLuint lightTex; // lighting data
 
 // lighting
-const uint lightSamples = 4; // samples for lighting
-const uint lightFrames = 4;
-const uint lightFidelity = 4;
+const uint lightSamples = 6; // samples for lighting
+const uint lightFrames = 6;
+const uint lightFidelity = 2;
 int screenHeightLight;
 int screenWidthLight;
 

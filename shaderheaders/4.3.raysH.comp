@@ -86,14 +86,14 @@ vec4 smoothColor(vec3 p) {
     vec3 f = fract(p);
     
     // need empty borders check so things close to edge don't sample green.
-    vec4 c000 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,0),worldPos)))];
-    vec4 c100 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,0),worldPos)))];
-    vec4 c010 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,0),worldPos)))];
-    vec4 c110 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,0),worldPos)))];
-    vec4 c001 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,1),worldPos)))];
-    vec4 c101 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,1),worldPos)))];
-    vec4 c011 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,1),worldPos)))];
-    vec4 c111 = colors[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,1),worldPos)))];
+    vec4 c000 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,0),worldPos)))].color;
+    vec4 c100 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,0),worldPos)))].color;
+    vec4 c010 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,0),worldPos)))].color;
+    vec4 c110 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,0),worldPos)))].color;
+    vec4 c001 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,1),worldPos)))].color;
+    vec4 c101 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,1),worldPos)))].color;
+    vec4 c011 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,1),worldPos)))].color;
+    vec4 c111 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,1),worldPos)))].color;
 
     // x interpolation
     vec4 x00 = mix(c000, c100, f.x);
@@ -107,6 +107,35 @@ vec4 smoothColor(vec3 p) {
 
     // z interpolation
     vec4 c = mix(y0, y1, f.z);
+
+    return c; // adjust for negative distances
+}
+
+float smoothEmissive(vec3 p) {
+    vec3 f = fract(p);
+    
+    // need empty borders check so things close to edge don't sample green.
+    float c000 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,0),worldPos)))].emissive;
+    float c100 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,0),worldPos)))].emissive;
+    float c010 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,0),worldPos)))].emissive;
+    float c110 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,0),worldPos)))].emissive;
+    float c001 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,1),worldPos)))].emissive;
+    float c101 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,0,1),worldPos)))].emissive;
+    float c011 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,1,1),worldPos)))].emissive;
+    float c111 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(1,1,1),worldPos)))].emissive;
+
+    // x interpolation
+    float x00 = mix(c000, c100, f.x);
+    float x10 = mix(c010, c110, f.x);
+    float x01 = mix(c001, c101, f.x);
+    float x11 = mix(c011, c111, f.x);
+
+    // y interpolation
+    float y0 = mix(x00, x10, f.y);
+    float y1 = mix(x01, x11, f.y);
+
+    // z interpolation
+    float c = mix(y0, y1, f.z);
 
     return c; // adjust for negative distances
 }

@@ -41,12 +41,13 @@ vec4 lightRay(vec3 ro, vec3 rd, vec3 sun) {
 
     // marching
     float t = 0.1;
-    vec4 color = vec4(0.0);
-    float bounces = 1.0;
+    vec3 surfaceNormal = rd;
+    
+    vec4 color = smoothColor(ro)*smoothEmissive(ro);
+    float remain = 1.0; // remaining energy after bounces
     for (int i = 0; i < lightSteps; i++) {
 
         vec3 p = ro+rd*t; // calculate ray position
-        if (clamp(p, vec3(0.0), vec3(chunkSize*viewSize)) != p) break; // borders (temp)
 
         // distance to chunk border
         float cd = distToBorder(mod(p,float(chunkSize)), rd, vec3(chunkSize))+e;
@@ -58,22 +59,24 @@ vec4 lightRay(vec3 ro, vec3 rd, vec3 sun) {
 
         // distance to surface
         float d = smoothDist(p);
-
         t+=min(max(d,1.0),cd); // step ray
 
         // hit
-        if (d < 0.1) { 
-            // coloring and stuff
+        if (d < 0.1) {
+            uint m = getMaterial(posToIndex(getLocalPos(p,worldPos)));
+            color += 3*materials[m].color*(materials[m].emissive+materials[m].reflective);
+            remain *= 0.8; // lose energy
+            if (remain <0.6) break; // too much energy loss
+
+            // reflecting handling
             vec3 normal = getNormal(p);
-            rd=normal;
-            t=0.2;
-            //color += smoothColor(p);//*vec4(max(dot(normal,vec3(1.0)),0.8));
-            bounces *= 0.9;
-            //return vec4(normal,1.0);
+            rd=reflect(rd,normal);
+            t=0.1; // reset t
         }
     }
-    //float sunLight = dot(rd, sun);
-    return vec4(1*bounces);
+    // if rays travel far enough on last bounce, get sun, otherwise make them dark
+    float sunLight = max(dot(surfaceNormal, sun),0.3);
+    return (color+1)*remain;
 }
 
 void main() {
@@ -89,11 +92,11 @@ void main() {
 
     // create random vector within normal hemisphere
     float it = sin(iTime); 
-    vec3 nrd = randomUnitVector(fragCoord*it*float(seed));
+    vec3 nrd = randomUnitVector(fragCoord*float(seed)*it);
     if (dot(nrd,normal)<0) nrd = -nrd; // flip if outside of hemisphere
 
     // cast ray from surface
-    vec3 sun = normalize(vec3(it, cos(iTime), 0.0));
+    vec3 sun = normalize(vec3(sin(iTime/10.0), 1.0, cos(iTime/20.0)));
     vec4 color = lightRay(ro, nrd, sun);
 
     // store light value
