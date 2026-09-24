@@ -35,7 +35,7 @@ uniform float iTime;
 //include shaderheaders/4.3.functionsH.comp
 //include shaderheaders/4.3.materialsH.comp
 //include shaderheaders/4.3.setgetH.comp
-//include shaderheaders/4.3.raysH.comp
+//include shaderheaders/4.3.samplingH.comp
 
 void main() {
     ivec2 fragCoord = ivec2(gl_GlobalInvocationID.xy);
@@ -65,9 +65,10 @@ void main() {
         }
 
         // distance to surface
-        float d = smoothDist(p);
+        float d = getProbeWarped(p);
+        if (d<5.0) d = smoothDist(p);
 
-        t+=min(max(d,e),cd); // step ray
+        t+=max(min(d,cd),e); // step ray
 
         // hit
         if (d < e) { 

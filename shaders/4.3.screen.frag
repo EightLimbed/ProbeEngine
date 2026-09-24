@@ -16,6 +16,7 @@ uniform int lightFrames = 1; // light frames averaged
 // averages lighting data from multiple passes and frames. minimum two passes.
 vec4 averagePasses(vec2 uv) {
     // takes advantage of linear filtering to do one less sample (samples between each pixel)
+    // gets light, sunlight is just one of the passes, it just has higher values so it is expressed more
     vec4 light = vec4(0.0);
     const float s = 1.0/float(lightSamples*lightFrames);
     for (int i = 0; i<(lightSamples*lightFrames)-1; i++) {

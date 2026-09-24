@@ -1,6 +1,6 @@
 #version 440 core
 
-layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in; // 64 local threads is apparently sweet spot
+layout(local_size_x = 8, local_size_y = 8) in; // 64 local threads is apparently sweet spot
 
 layout(std430, binding = 0) buffer ProbeData {
     uint probeData[];
@@ -24,8 +24,8 @@ layout(rgba32f, binding=2) uniform writeonly image3D lightMap; // lighting map
 uniform int screenWidth = 1;
 uniform int screenHeight = 1;
 uniform int lightSamples = 1;
+uniform int lightFrames = 1;
 uniform int lightFidelity = 1;
-uniform int lightFrame = 1;
 uniform vec3 worldPos;
 uniform vec3 pPos;
 uniform vec3 pDir;
@@ -37,14 +37,13 @@ uniform float iTime;
 //include shaderheaders/4.3.setgetH.comp
 //include shaderheaders/4.3.samplingH.comp
 
-vec4 lightRay(vec3 ro, vec3 rd) {
+float sunRay(vec3 ro, vec3 rd, vec3 normal) {
     // marching
-    vec4 color = smoothColor(ro)*smoothEmissive(ro);
-    float reflectiveness = materials[getMaterial(posToIndex(getLocalPos(ro,worldPos)))].reflective;
-    float remain = 1.0; // remaining energy after bounces
+    float light = dot(rd,normal);
+    if (light<0) 0.0;
     float t = 0.1;
 
-    for (int i = 0; i < lightSteps; i++) {
+    for (int i = 0; i < lightSteps*2; i++) {
 
         vec3 p = ro+rd*t; // calculate ray position
 
@@ -63,41 +62,32 @@ vec4 lightRay(vec3 ro, vec3 rd) {
 
         // hit
         if (d < 0.1) {
-            uint m = getMaterial(posToIndex(getLocalPos(p,worldPos)));
-            color += materials[m].color*(reflectiveness+materials[m].emissive);
-            remain *= max(materials[m].emissive,0.2); // lose energy
-            if (remain <0.15) break; // too much energy loss
-
-            // reflecting handling
-            rd=reflect(rd,getNormal(p));
-            t=0.1; // reset t
+            return 0.0;
         }
     }
     
-    return (color+1)*remain;
+    return light;
 }
 
 void main() {
-    ivec3 fragCoord = ivec3(gl_GlobalInvocationID.xyz); // light screen coordinates
-    if (fragCoord.z>lightSamples) return; // early out for safety
+    ivec2 fragCoord = ivec2(gl_GlobalInvocationID.xy); // light screen coordinates
+    vec2 uv = vec2(fragCoord) / vec2(screenWidth, screenHeight); // sample from normal screen coords
 
-    // sample from normal screen coords
-    vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(screenWidth, screenHeight);
-    int seed = fragCoord.z+lightFrame*lightSamples;
+    // sample depth map, and get normals
     vec4 depth = texture(depthMap, uv);
     vec3 normal = depth.xyz;
 
     // reconstruct position on surface of ray
-    vec3 rd = getRayDir(fragCoord.xy, vec2(screenWidth,screenHeight),pDir,1.0);
+    vec3 rd = getRayDir(fragCoord, vec2(screenWidth,screenHeight),pDir,1.0);
     vec3 ro = pPos-worldPos+center+rd*depth.w+normal;
 
-    // create random vector within normal hemisphere
-    vec3 nrd = randomUnitVector(normalize(fragCoord+lightFrame+iTime));
-    if (dot(nrd,normal)<0.0) nrd = -nrd; // flip if outside of hemisphere
+    // get sun direction, some jitter applied to make softer shadows after noise filtering
+    vec3 sun = normalize(vec3(normalize(vec3(sin(iTime*0.2),1.0,cos(iTime*0.2))))*7+hash3(vec3(fragCoord,iTime))-1);
 
-    // cast ray from surface
-    vec4 color = lightRay(ro, nrd);
+    // cast ray from surface to sun
+    float light = sunRay(ro, sun, normal);
 
     // store light value
-    imageStore(lightMap, ivec3(fragCoord.xy,seed), color);
+    int count = lightSamples*lightFrames+1; // amount of other light passes
+    imageStore(lightMap, ivec3(fragCoord,0), vec4(light*count*0.2));
 }

@@ -15,6 +15,7 @@ int screenHeight = 600;
 GLuint ScreenID; // screenshader
 GLuint MarcherID; // raymarcher
 GLuint LightingID; // lighting pass 
+GLuint SunID; // sun lighting pass 
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
 GLuint OccupancyID; // second stage to terrain, sets occupancy and stuff
@@ -102,8 +103,13 @@ int main() {
   shaderCompile(&MarcherID, GL_COMPUTE_SHADER, "shaders/4.3.raymarcher.comp");
   MarcherID = linkComputeShader(MarcherID);
 
+  // lighting shader
   shaderCompile(&LightingID, GL_COMPUTE_SHADER, "shaders/4.3.lighting.comp");
   LightingID = linkComputeShader(LightingID);
+
+  // sun light shader shader
+  shaderCompile(&SunID, GL_COMPUTE_SHADER, "shaders/4.3.sun.comp");
+  SunID = linkComputeShader(SunID);
 
   { // screen shader
     GLuint vID;
@@ -229,6 +235,17 @@ int main() {
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
+    // sun lighting
+    glUseProgram(SunID);
+    shaderSetVec3(SunID, "worldPos", worldPos); // sets player stuff
+    shaderSetVec3(SunID, "pPos", player.pos); // sets player stuff
+    shaderSetVec3(SunID, "pDir", player.dir);
+    shaderSetFloat(SunID, "iTime", currentTime);
+    
+    glDispatchCompute((screenWidthLight+7)/8,(screenHeightLight+7)/8,1);
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
     // screen
     glUseProgram(ScreenID);
 
@@ -273,6 +290,13 @@ void updateScreenSettings() {
     shaderSetInt(LightingID, "screenWidth", screenWidthLight);
     shaderSetInt(LightingID, "screenHeight", screenHeightLight);
     shaderSetInt(LightingID, "lightSamples", lightSamples);
+
+    // sets sunlight shader screen stuff
+    glUseProgram(SunID);
+    shaderSetInt(SunID, "screenWidth", screenWidthLight);
+    shaderSetInt(SunID, "screenHeight", screenHeightLight);
+    shaderSetInt(SunID, "lightFrames", lightFrames);
+    shaderSetInt(SunID, "lightSamples", lightSamples);
 
     // screen texture (screen color data).
     glDeleteTextures(1, &colorTex);
