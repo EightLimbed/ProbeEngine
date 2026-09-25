@@ -4,7 +4,9 @@ out vec4 FragColor;
 
 layout(binding = 0) uniform sampler2D colorMap; // color map
 layout(binding = 1) uniform sampler2D depthMap; // depth and normal map
-layout(binding = 2) uniform sampler3D lightMap; // lighting map
+layout(binding = 3) uniform sampler2D waveletMap; // depth and normal map
+
+//layout(binding = 2) uniform sampler3D lightMap; // lighting map
 
 uniform int screenWidth = 1;
 uniform int screenHeight = 1;
@@ -13,24 +15,11 @@ uniform int lightFrames = 1; // light frames averaged
 
 //include shaderheaders/4.3.constantsH.comp
 
-// averages lighting data from multiple passes and frames. minimum two passes.
-vec4 averagePasses(vec2 uv) {
-    // takes advantage of linear filtering to do one less sample (samples between each pixel)
-    // gets light, sunlight is just one of the passes, it just has higher values so it is expressed more
-    vec4 light = vec4(0.0);
-    const float s = 1.0/float(lightSamples*lightFrames);
-    for (int i = 0; i<(lightSamples*lightFrames)-1; i++) {
-        float w = (0.5+float(i))*s;
-        light += texture(lightMap, vec3(uv, w));
-    }
-    return max(light*s,0.3);
-}
-
 void main() {
     vec2 uv = gl_FragCoord.xy / vec2(screenWidth, screenHeight);
     vec4 color = texture(colorMap, uv);
     vec4 depth = texture(depthMap, uv);
-    vec4 light = averagePasses(uv);
+    vec4 light = texture(waveletMap, uv);
     vec3 normal = depth.xyz;
 
     float fog = pow(depth.w*1.1/renderDist,15.0);

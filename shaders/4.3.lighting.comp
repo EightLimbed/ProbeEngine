@@ -76,7 +76,7 @@ vec4 lightRay(vec3 ro, vec3 rd) {
         }
     }
     
-    return (1+color)*remain;
+    return (0.7+color)*remain;
 }
 
 void main() {

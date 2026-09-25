@@ -15,6 +15,7 @@ int screenHeight = 600;
 GLuint ScreenID; // screenshader
 GLuint MarcherID; // raymarcher
 GLuint LightingID; // lighting pass 
+GLuint WaveletID; // smoothed lighting pass 
 GLuint SunID; // sun lighting pass 
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
@@ -26,10 +27,11 @@ GLuint ResetID; // index occupancy resetter
 GLuint colorTex; // screen colors
 GLuint depthTex; // depth and surface normal data
 GLuint lightTex; // lighting data
+GLuint waveletTex; // smoothed lighting data with wavelet filtering
 
 // lighting
-const uint lightSamples = 6; // samples for lighting
-const uint lightFrames = 6;
+const uint lightSamples = 4; // samples for lighting
+const uint lightFrames = 4;
 const uint lightFidelity = 2;
 int screenHeightLight;
 int screenWidthLight;
@@ -110,6 +112,10 @@ int main() {
   // sun light shader shader
   shaderCompile(&SunID, GL_COMPUTE_SHADER, "shaders/4.3.sun.comp");
   SunID = linkComputeShader(SunID);
+
+  // wavelet denoising shader
+  shaderCompile(&WaveletID, GL_COMPUTE_SHADER, "shaders/4.3.wavelet.comp");
+  WaveletID = linkComputeShader(WaveletID);
 
   { // screen shader
     GLuint vID;
@@ -246,6 +252,11 @@ int main() {
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
 
+    // wavelet filtering
+    glUseProgram(WaveletID);
+    glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+
     // screen
     glUseProgram(ScreenID);
 
@@ -291,6 +302,13 @@ void updateScreenSettings() {
     shaderSetInt(LightingID, "screenHeight", screenHeightLight);
     shaderSetInt(LightingID, "lightSamples", lightSamples);
 
+    // sets wavelet shader screen sizes
+    glUseProgram(WaveletID);
+    shaderSetInt(WaveletID, "screenWidth", screenWidth);
+    shaderSetInt(WaveletID, "screenHeight", screenHeight);
+    shaderSetInt(WaveletID, "lightSamples", lightSamples);
+    shaderSetInt(WaveletID, "lightFrames", lightFrames);
+
     // sets sunlight shader screen stuff
     glUseProgram(SunID);
     shaderSetInt(SunID, "screenWidth", screenWidthLight);
@@ -312,12 +330,19 @@ void updateScreenSettings() {
     glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
     glBindImageTexture(1, depthTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-    // lighting texture (colored lighting). 3D texture, each layer is a pass
+    // lighting data texture (colored lighting). 3D texture, each layer is a pass
     glDeleteTextures(1, &lightTex);
     glGenTextures(1, &lightTex);
     glBindTexture(GL_TEXTURE_3D, lightTex);
     glTexStorage3D(GL_TEXTURE_3D, 1, GL_RGBA32F, screenWidthLight, screenHeightLight, lightSamples*lightFrames);
     glBindImageTexture(2, lightTex, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+    // smoothed lighting texture (wavelet filtered).
+    glDeleteTextures(1, &waveletTex);
+    glGenTextures(1, &waveletTex);
+    glBindTexture(GL_TEXTURE_2D, waveletTex);
+    glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, screenWidth, screenHeight);
+    glBindImageTexture(3, waveletTex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
     // set lighting image stuff
     glUseProgram(depthTex);
@@ -325,6 +350,18 @@ void updateScreenSettings() {
     glActiveTexture(GL_TEXTURE1); // set depth sampler uniform
     glBindTexture(GL_TEXTURE_2D, depthTex);
     shaderSetInt(ScreenID, "depthMap", 1);
+
+    // set filtering image stuff
+    glUseProgram(WaveletID);
+
+    glActiveTexture(GL_TEXTURE1); // set depth sampler uniform
+    glBindTexture(GL_TEXTURE_2D, depthTex);
+    shaderSetInt(WaveletID, "depthMap", 1);
+
+    glActiveTexture(GL_TEXTURE2); // set light sampler uniform
+    glBindTexture(GL_TEXTURE_3D, lightTex);
+    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    shaderSetInt(WaveletID, "lightMap", 2);
 
     // set screen image stuff
     glUseProgram(ScreenID);
@@ -337,10 +374,9 @@ void updateScreenSettings() {
     glBindTexture(GL_TEXTURE_2D, depthTex);
     shaderSetInt(ScreenID, "depthMap", 1);
 
-    glActiveTexture(GL_TEXTURE2); // set light sampler uniform
-    glBindTexture(GL_TEXTURE_3D, lightTex);
-    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    shaderSetInt(ScreenID, "lightMap", 2);
+    glActiveTexture(GL_TEXTURE3); // set depth sampler uniform
+    glBindTexture(GL_TEXTURE_2D, waveletTex);
+    shaderSetInt(ScreenID, "waveletMap", 3);
 }
 
 void processInput(GLFWwindow *window) {

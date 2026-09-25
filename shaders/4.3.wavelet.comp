@@ -1,0 +1,37 @@
+#version 440 core
+
+layout(local_size_x = 8, local_size_y = 8) in; // 64 local threads is apparently sweet spot
+
+layout(binding = 1) uniform sampler2D depthMap; // depth and normal map
+layout(binding = 2) uniform sampler3D lightMap; // lighting map
+layout(rgba32f, binding=3) uniform writeonly image2D waveletMap; // lighting map
+
+//include shaderheaders/4.3.constantsH.comp
+
+uniform int screenWidth = 1;
+uniform int screenHeight = 1;
+uniform int lightSamples = 1; // light samples per frame
+uniform int lightFrames = 1; // light frames averaged
+
+// averages lighting data from multiple passes and frames. minimum two passes.
+vec4 averagePasses(vec2 uv) {
+    // takes advantage of linear filtering to do one less sample (samples between each pixel)
+    // gets light, sunlight is just one of the passes, it just has higher values so it is expressed more
+    vec4 light = vec4(0.0);
+    const float s = 1.0/float(lightSamples*lightFrames);
+    for (int i = 0; i<(lightSamples*lightFrames)-1; i++) {
+        float w = (0.5+float(i))*s;
+        light += texture(lightMap, vec3(uv, w));
+    }
+    return light*s+0.3;
+}
+
+void main() {
+    ivec2 fragCoord = ivec2(gl_GlobalInvocationID.xy);
+    
+    vec2 uv = fragCoord.xy / vec2(screenWidth, screenHeight);
+
+    vec4 light = averagePasses(uv);
+
+    imageStore(waveletMap, fragCoord, light);
+}
