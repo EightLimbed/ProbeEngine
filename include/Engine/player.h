@@ -5,19 +5,19 @@
 #include <stdio.h>
 #include <Engine/physics.h>
 
-extern int throttle; // if throttling, stop player movement.
+extern int throttle; // if throttling chunk gen, stop player movement.
 
 typedef struct {
   // physical
   vec3 pos; // global position
   vec3 dir; // facing direction
   float gravity; // falling
-  float height; // height of player
-  float radius; // radius of player
-  float terminal; // terminal velocity of player
 
   // stats
   float speed;
+  float height; // height of player
+  float radius; // radius of player
+  float terminal; // terminal velocity of player
 
   // controls
   float sensitivity;
@@ -25,6 +25,7 @@ typedef struct {
   double omy; // old mouse y
   float yaw;
   float pitch;
+  int material; // selected material
 
   // input
   int mousePress; // held
@@ -51,6 +52,7 @@ void initializePlayer(player *p, vec3 pos, vec3 dir, float height, float speed, 
   p->mousePress = 0;
   p->gravity = 0;
   p->terminal = 220.0;
+  p->material = 0;
 }
 
 void checkPlayer(player *p) {
@@ -66,6 +68,41 @@ void clampPlayer(player *p, vec3 A, vec3 B) {
   if (A.x>p->pos.x) p->pos.x = A.x; // min X
   if (A.y>p->pos.y) p->pos.y = A.y; // min Y
   if (A.z>p->pos.z) p->pos.z = A.z; // min Z
+}
+
+// number keys to select materials
+void materialSelect(player *p) {
+  // materials
+  if (glfwGetKey(p->window,GLFW_KEY_1)==GLFW_PRESS) {
+    p->material = 0;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_2)==GLFW_PRESS) {
+    p->material = 1;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_3)==GLFW_PRESS) {
+    p->material = 2;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_4)==GLFW_PRESS) {
+    p->material = 3;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_5)==GLFW_PRESS) {
+    p->material = 4;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_6)==GLFW_PRESS) {
+    p->material = 5;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_7)==GLFW_PRESS) {
+    p->material = 6;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_8)==GLFW_PRESS) {
+    p->material = 7;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_9)==GLFW_PRESS) {
+    p->material = 8;
+  }
+  else if (glfwGetKey(p->window,GLFW_KEY_0)==GLFW_PRESS) {
+    p->material = 9;
+  }
 }
 
 void playerInputs(player *p, float deltaTime) {
@@ -123,6 +160,9 @@ void playerInputs(player *p, float deltaTime) {
   if (glfwGetKey(p->window,GLFW_KEY_P)==GLFW_PRESS) {
     p->pos = (vec3){128.0,0.0,128.0};
   }
+
+  // material selecting
+  materialSelect(p);
 }
 
 void playerPhysics(player *p) {

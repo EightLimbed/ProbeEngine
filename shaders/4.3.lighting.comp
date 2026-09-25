@@ -40,7 +40,8 @@ uniform float iTime;
 vec4 lightRay(vec3 ro, vec3 rd) {
     // marching
     vec4 color = smoothColor(ro)*smoothEmissive(ro);
-    float reflectiveness = materials[getMaterial(posToIndex(getLocalPos(ro,worldPos)))].reflective;
+    uint hitM = getMaterial(posToIndex(getLocalPos(ro,worldPos)));
+    float reflectiveness = materials[hitM].reflective;
     float remain = 1.0; // remaining energy after bounces
     float t = 0.1;
 
@@ -64,9 +65,10 @@ vec4 lightRay(vec3 ro, vec3 rd) {
         // hit
         if (d < 0.1) {
             uint m = getMaterial(posToIndex(getLocalPos(p,worldPos)));
-            color += materials[m].color*(reflectiveness+materials[m].emissive);
-            remain *= max(materials[m].emissive,0.2); // lose energy
-            if (remain <0.15) break; // too much energy loss
+            color += materials[m].color*(materials[m].emissive);
+            remain *= 0.3+materials[m].emissive; // lose energy
+            if (remain <0.05) break; // too much energy loss
+            if (remain >1.0) break; // too much energy gain
 
             // reflecting handling
             rd=reflect(rd,getNormal(p));
@@ -74,7 +76,7 @@ vec4 lightRay(vec3 ro, vec3 rd) {
         }
     }
     
-    return (color+1)*remain;
+    return (1+color)*remain;
 }
 
 void main() {

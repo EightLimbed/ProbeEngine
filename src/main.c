@@ -187,7 +187,7 @@ int main() {
     if (player.mouseClick != 0) {
         // apply update
         vec3 target = raycast(player.pos, player.dir, 128.0);
-        applyUpdate(target, player.mousePress, 0, 6.0, 7);
+        applyUpdate(target, player.mousePress, player.material, 6.0, player.material);
         updatecolliderData();
     }
 

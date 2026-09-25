@@ -83,7 +83,7 @@ float smoothDist(vec3 p) {
 }
 
 vec4 smoothColor(vec3 p) {
-    vec3 f = sqrt(fract(p));
+    vec3 f = fract(p);
     
     // need empty borders check so things close to edge don't sample green.
     vec4 c000 = materials[getMaterial(posToIndex(getLocalPos(p + vec3(0,0,0),worldPos)))].color;

@@ -23,7 +23,7 @@ vec4 averagePasses(vec2 uv) {
         float w = (0.5+float(i))*s;
         light += texture(lightMap, vec3(uv, w));
     }
-    return light*s;
+    return max(light*s,0.3);
 }
 
 void main() {
@@ -35,5 +35,5 @@ void main() {
 
     float fog = pow(depth.w*1.1/renderDist,15.0);
 
-    FragColor = (depth.w<renderDist) ? mix(light*color,sky,fog) : sky;
+    FragColor = (depth.w<renderDist) ? mix(light+color-1,sky,fog) : sky;
 }
