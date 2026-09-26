@@ -82,7 +82,7 @@ void main() {
     vec3 ro = pPos-worldPos+center+rd*depth.w+normal;
 
     // get sun direction, some jitter applied to make softer shadows after noise filtering
-    vec3 sun = normalize(vec3(normalize(vec3(sin(iTime*0.2),1.0,cos(iTime*0.2))))*10+hash3(vec3(fragCoord,iTime))-1);
+    vec3 sun = normalize(vec3(normalize(vec3(sin(iTime*0.2),1.0,cos(iTime*0.2))))*20+hash3(vec3(fragCoord,1.0))-1);
 
     // cast ray from surface to sun
     float light = sunRay(ro, sun, normal);

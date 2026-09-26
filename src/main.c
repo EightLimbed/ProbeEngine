@@ -15,7 +15,7 @@ int screenHeight = 600;
 GLuint ScreenID; // screenshader
 GLuint MarcherID; // raymarcher
 GLuint LightingID; // lighting pass 
-GLuint WaveletID; // smoothed lighting pass 
+GLuint WaveletID; // smoothed lighting pass double buffering 2
 GLuint SunID; // sun lighting pass 
 GLuint UpdatesID; // terrain edits/updates
 GLuint TerrainID; // terrain generator
@@ -30,9 +30,10 @@ GLuint lightTex; // lighting data
 GLuint waveletTex; // smoothed lighting data with wavelet filtering
 
 // lighting
-const uint lightSamples = 4; // samples for lighting
+const uint lightSamples = 6; // samples for lighting
 const uint lightFrames = 4;
 const uint lightFidelity = 2;
+const uint waveletPasses = 2;
 int screenHeightLight;
 int screenWidthLight;
 
@@ -40,7 +41,7 @@ int screenWidthLight;
 const uint chunkCut = 10; // amount to divide max memory by
 const uint chunkSize = 32; // chunk size in blocks
 const uint chunkProbes = chunkSize*chunkSize*chunkSize;
-const uint viewSize = 32; // world size in chunks
+const uint viewSize = 24; // world size in chunks
 const uint viewChunks = viewSize*viewSize*viewSize;
 
 // collisions stuff
@@ -254,8 +255,11 @@ int main() {
 
     // wavelet filtering
     glUseProgram(WaveletID);
-    glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    for (int i = 0; i<waveletPasses+1; i++) {
+        shaderSetInt(WaveletID, "pass", i);
+        glDispatchCompute((screenWidth+7)/8,(screenHeight+7)/8,1);
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_TEXTURE_FETCH_BARRIER_BIT);
+    }
 
     // screen
     glUseProgram(ScreenID);

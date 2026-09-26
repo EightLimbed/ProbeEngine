@@ -63,7 +63,7 @@ void setQueueWork(float targetFPS, float playerSpeed) {
 // gets data structures ready for chunks
 void resetChunks() {
     // set max queue work per frame
-    setQueueWork(60.0, 100);
+    setQueueWork(20.0, 100);
 
     // reset queue
     free(chunkQueue);

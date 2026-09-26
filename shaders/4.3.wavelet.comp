@@ -4,7 +4,8 @@ layout(local_size_x = 8, local_size_y = 8) in; // 64 local threads is apparently
 
 layout(binding = 1) uniform sampler2D depthMap; // depth and normal map
 layout(binding = 2) uniform sampler3D lightMap; // lighting map
-layout(rgba32f, binding=3) uniform writeonly image2D waveletMap; // lighting map
+layout(rgba32f, binding=3) uniform writeonly image2D waveletMapWrite; // wavelet lighting map
+layout(binding = 3) uniform sampler2D waveletMap; // wavelet lighting map
 
 //include shaderheaders/4.3.constantsH.comp
 
@@ -12,6 +13,7 @@ uniform int screenWidth = 1;
 uniform int screenHeight = 1;
 uniform int lightSamples = 1; // light samples per frame
 uniform int lightFrames = 1; // light frames averaged
+uniform int pass = 0;
 
 // averages lighting data from multiple passes and frames. minimum two passes.
 vec4 averagePasses(vec2 uv) {
@@ -23,15 +25,48 @@ vec4 averagePasses(vec2 uv) {
         float w = (0.5+float(i))*s;
         light += texture(lightMap, vec3(uv, w));
     }
-    return light*s+0.3;
+    return light*s;
+}
+
+vec4 applyBlur(vec2 uv, int stepSide, float stepSize) {
+    // gets original values
+    vec4 cval = texture(waveletMap, uv);
+    vec3 nval = texture(depthMap, uv).xyz;
+    float dval = texture(depthMap, uv).w;
+
+    float sumWeight = 0.0;
+    vec4 sumColor = vec4(0.0);
+    float maxR = 1.0/length(vec2(stepSide*stepSize));
+
+    for (int x= -stepSide; x<=stepSide; x++)
+    for (int y= -stepSide; y<=stepSide; y++) {
+        // new uv
+        vec2 nuv = uv + vec2(x,y)/vec2(screenWidth, screenHeight)*stepSize;
+
+        // get new values
+        vec4 c_i = texture(waveletMap, nuv);
+        vec3 n_i = texture(depthMap, nuv).xyz;
+        float d_i = texture(depthMap, nuv).w;
+        
+        // compute edge-stopping weights based on color, normal, and depth differences
+        float w_c = min(exp(-max(0.0, length(c_i - cval) * 1.0)), 1.0);
+        float w_n = min(exp(-max(0.0, length(n_i - nval) * 10.0)), 1.0);
+        float w_d = min(exp(-max(0.0, (d_i - dval) * 10.0)), 1.0);
+        float weight = w_c * w_n * w_d*(1.0-length(vec2(x,y)*maxR));
+
+        // increment color and weight
+        sumColor += c_i * weight;
+        sumWeight += weight;
+     
+    }
+    return sumColor/sumWeight;
 }
 
 void main() {
     ivec2 fragCoord = ivec2(gl_GlobalInvocationID.xy);
-    
     vec2 uv = fragCoord.xy / vec2(screenWidth, screenHeight);
 
-    vec4 light = averagePasses(uv);
-
-    imageStore(waveletMap, fragCoord, light);
+    // after, apply blur
+    vec4 light = (pass==0) ? averagePasses(uv) : applyBlur(uv, 3, 3);
+    imageStore(waveletMapWrite, fragCoord, light);
 }

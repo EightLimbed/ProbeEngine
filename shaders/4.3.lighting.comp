@@ -60,14 +60,14 @@ vec4 lightRay(vec3 ro, vec3 rd) {
         // distance to surface
         float d = getProbeWarped(p);
         if (d<5.0) d = smoothDist(p);
-        t+=max(min(d,cd),1.0); // step ray
+        t+=max(min(d,cd),-dMin); // step ray
 
         // hit
         if (d < 0.1) {
             uint m = getMaterial(posToIndex(getLocalPos(p,worldPos)));
             color += materials[m].color*(materials[m].emissive);
-            remain *= 0.3+materials[m].emissive; // lose energy
-            if (remain <0.05) break; // too much energy loss
+            remain *= 0.4+materials[m].emissive; // lose energy
+            if (remain <0.1) break; // too much energy loss
             if (remain >1.0) break; // too much energy gain
 
             // reflecting handling
@@ -76,7 +76,7 @@ vec4 lightRay(vec3 ro, vec3 rd) {
         }
     }
     
-    return (0.7+color)*remain;
+    return (1.0+color)*remain;
 }
 
 void main() {
