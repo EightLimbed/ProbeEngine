@@ -30,8 +30,8 @@ GLuint lightTex; // lighting data
 GLuint waveletTex; // smoothed lighting data with wavelet filtering
 
 // lighting
-const uint lightSamples = 6; // samples for lighting
-const uint lightFrames = 4;
+const uint lightSamples = 2; // samples for lighting
+const uint lightFrames = 8;
 const uint lightFidelity = 2;
 const uint waveletPasses = 2;
 int screenHeightLight;

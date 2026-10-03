@@ -36,7 +36,7 @@ vec4 applyBlur(vec2 uv, int stepSide, float stepSize) {
 
     float sumWeight = 0.0;
     vec4 sumColor = vec4(0.0);
-    float maxR = 1.0/length(vec2(stepSide*stepSize));
+    //float maxR = 1.0/length(vec2(stepSide*stepSize));
 
     for (int x= -stepSide; x<=stepSide; x++)
     for (int y= -stepSide; y<=stepSide; y++) {
@@ -52,7 +52,7 @@ vec4 applyBlur(vec2 uv, int stepSide, float stepSize) {
         float w_c = min(exp(-max(0.0, length(c_i - cval) * 1.0)), 1.0);
         float w_n = min(exp(-max(0.0, length(n_i - nval) * 10.0)), 1.0);
         float w_d = min(exp(-max(0.0, (d_i - dval) * 10.0)), 1.0);
-        float weight = w_c * w_n * w_d*(1.0-length(vec2(x,y)*maxR));
+        float weight = w_c * w_n * w_d;//*(1.0-length(vec2(x,y)*maxR));
 
         // increment color and weight
         sumColor += c_i * weight;
@@ -67,6 +67,6 @@ void main() {
     vec2 uv = fragCoord.xy / vec2(screenWidth, screenHeight);
 
     // after, apply blur
-    vec4 light = (pass==0) ? averagePasses(uv) : applyBlur(uv, 3, 3);
+    vec4 light = (pass==0) ? averagePasses(uv) : applyBlur(uv, 3, 3*pass);
     imageStore(waveletMapWrite, fragCoord, light);
 }
